@@ -109,12 +109,18 @@
 ; at present, it sets the board position clicked to contain
 ; a black piece by sending a command to the board-commands
 ; channel
+
+(def curr-piece (atom :black-piece))
+
 (go (while true
       (let [event (<! board-events)]
         (put! board-commands
               {:command :update-board-position
                :position (:position event)
-               :piece :black-piece}))))
+               :piece @curr-piece}))
+      (if (compare-and-set! curr-piece :black-piece :red-piece)
+          ()
+          (compare-and-set! curr-piece :red-piece :black-piece)))) ;; this is where color is determined
 
 ; this concurrent process receives board command messages
 ; and executes on them.  at present, the only thing it does
