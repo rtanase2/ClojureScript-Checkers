@@ -62,6 +62,7 @@
 ; positional constants
 (def top-row 1)
 (def bottom-row 8)
+(def curr-piece (atom :black-piece))
 
 ; given a board position, return the position of neighbors
 ; [NOTE:] Challengee should investigate memoization of
@@ -104,13 +105,17 @@
   (map (fn [pos] {pos (compute-pos-neighbors pos)})
        (range 1 33)))
 
+(defn determine-piece-color []
+  (let [color @curr-piece]
+    (cond
+      (= color :black-piece) :red-piece
+      (= color :red-piece) :black-piece)))
+
 ; == Concurrent Processes =================================
 ; this concurrent process reacts to board click events --
 ; at present, it sets the board position clicked to contain
 ; a black piece by sending a command to the board-commands
 ; channel
-
-(def curr-piece (atom :black-piece))
 
 (go (while true
       (let [event (<! board-events)]
@@ -118,9 +123,8 @@
               {:command :update-board-position
                :position (:position event)
                :piece @curr-piece}))
-      (if (compare-and-set! curr-piece :black-piece :red-piece)
-          ()
-          (compare-and-set! curr-piece :red-piece :black-piece)))) ;; this is where color is determined
+      (swap! curr-piece determine-piece-color)
+      (println board)))
 
 ; this concurrent process receives board command messages
 ; and executes on them.  at present, the only thing it does
