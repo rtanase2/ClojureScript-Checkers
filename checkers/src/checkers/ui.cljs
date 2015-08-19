@@ -65,13 +65,13 @@
 
   (om/root
     (fn [data owner]
-      (om/component (dom/h2 nil (:header data))))
+      (om/component (dom/h2 #js {:className "title"} (:header data))))
     app-state
     {:target (. js/document (getElementById "title"))})
 
   (om/root
     (fn [data owner]
-      (om/component (dom/p nil (:instructions data))))
+      (om/component (dom/p #js {:className "plain-text"} (:instructions data))))
     app-state
     {:target (. js/document (getElementById "instructions"))}))
 

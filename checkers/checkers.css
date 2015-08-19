@@ -1,3 +1,7 @@
+body {
+  background: #4DB8DB;
+}
+
 table {
 	border: 1px solid black;
 }
@@ -53,4 +57,12 @@ td {
 	width: 52px;
 	height: 52px;
 	background: darkslategray;
+}
+
+.title {
+  font-family: 'Roboto', sans-serif;
+}
+
+.plain-text {
+  font-family: 'Slabo 27px', serif;
 }
