@@ -52,10 +52,27 @@
            (partition 4 board)))))
 
 ; == Bootstrap ============================================
+(defonce app-state (atom {:header "Welcome to Rachelle's ClojureScript Checkers!"
+                          :instructions (str "You are the red player. To move, click "
+                                             "the piece you'd like to move and then "
+                                             "click the square you'd like to move it to.")}))
+
 (defn bootstrap-ui []
   (om/root
     checkerboard ; our UI
     board        ; our game state
-    {:target (. js/document (getElementById "checkers"))}))
+    {:target (. js/document (getElementById "checkers"))})
+
+  (om/root
+    (fn [data owner]
+      (om/component (dom/h2 nil (:header data))))
+    app-state
+    {:target (. js/document (getElementById "title"))})
+
+  (om/root
+    (fn [data owner]
+      (om/component (dom/p nil (:instructions data))))
+    app-state
+    {:target (. js/document (getElementById "instructions"))}))
 
 (bootstrap-ui)
