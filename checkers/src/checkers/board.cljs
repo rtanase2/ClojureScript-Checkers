@@ -78,13 +78,13 @@
         right-edge? (= (mod pos 4) 0)
         left-edge? (= (mod pos 4) 1)
         up-left (if row-odd? (- pos 4)
-                             (- pos 5))
+                  (- pos 5))
         up-right (if row-odd? (- pos 3)
-                              (- pos 4))
+                   (- pos 4))
         down-left (if row-odd? (+ pos 4)
-                               (+ pos 5))
+                    (+ pos 5))
         down-right (if row-odd? (+ pos 3)
-                                (+ pos 4))]
+                     (+ pos 4))]
     (remove nil?
             (flatten
              [(if (not top-row?)
@@ -113,15 +113,15 @@
     #{:black-piece, :selected-black-piece, :prom-black-piece, :selected-prom-black-piece}))
 
 (defn determine-piece [piece]
-    (cond
-     (= piece :red-piece) :selected-red-piece
-     (= piece :black-piece) :selected-black-piece
-     (= piece :prom-red-piece) :selected-prom-red-piece
-     (= piece :prom-black-piece) :selected-prom-red-piece
-     (= piece :selected-red-piece) :red-piece
-     (= piece :selected-black-piece) :black-piece
-     (= piece :selected-prom-red-piece) :prom-red-piece
-     (= piece :selected-prom-black-piece) :prom-red-piece))
+  (cond
+   (= piece :red-piece) :selected-red-piece
+   (= piece :black-piece) :selected-black-piece
+   (= piece :prom-red-piece) :selected-prom-red-piece
+   (= piece :prom-black-piece) :selected-prom-red-piece
+   (= piece :selected-red-piece) :red-piece
+   (= piece :selected-black-piece) :black-piece
+   (= piece :selected-prom-red-piece) :prom-red-piece
+   (= piece :selected-prom-black-piece) :prom-red-piece))
 
 ; == Concurrent Processes =================================
 ; this concurrent process reacts to board click events --
@@ -137,22 +137,40 @@
 ; TODO: Remove valid-selection when its not valid along with curr-selected
 (go (while true
       (let [event (<! board-events)]
-        (println (str (@res/board-info :valid-selection) " "  (@res/board-info :curr-selected)))
         (cout/system-out-text-delegator "")
         (if (get (get-valid-piece-types) (@board (:position event)))
-          (do
-            (put! board-commands
-              {:command :update-board-position
-               :position (:position event)
-               :piece (determine-piece (@board (:position event)))})
-            (swap! res/board-info assoc :valid-selection true)
-            (swap! res/board-info assoc :curr-selected (:position event)))
-          (cout/system-out-text-delegator (str "Invalid piece. Please choose a " (name (@res/board-info :curr-color)) " piece"))))))
+          (if (= (@res/board-info :curr-selected) (:position event))
+            (do
+              (println "already selected!!")
+              (put! board-commands
+                    {:command :update-board-position
+                     :position (@res/board-info :curr-selected)
+                     :piece (determine-piece (@board (@res/board-info :curr-selected)))})
+              (swap! res/board-info assoc :valid-selection false)
+              (swap! res/board-info assoc :curr-selected nil))
+            (do
+              (println "not already selected")
+              (put! board-commands
+                    {:command :update-board-position
+                     :position (:position event)
+                     :piece (determine-piece (@board (:position event)))})
+              (if (@res/board-info :valid-selection)
+                (put! board-commands
+                    {:command :update-board-position
+                     :position (@res/board-info :curr-selected)
+                     :piece (determine-piece (@board (@res/board-info :curr-selected)))}))
+              (swap! res/board-info assoc :valid-selection true)
+              (swap! res/board-info assoc :curr-selected (:position event))
+              (println (@res/board-info :valid-selection))
+              (println (@res/board-info :curr-selected))))
 
-; this concurrent process receives board command messages
-; and executes on them.  at present, the only thing it does
-; is sets the desired game position to the desired piece
-(go (while true
-      (let [command (<! board-commands)]
-        (swap! board assoc (:position command)
-                           (:piece command)))))
+            (cout/system-out-text-delegator (str "Invalid piece. Please choose a " (name (@res/board-info :curr-color)) " piece"))))))
+
+    ; this concurrent process receives board command messages
+    ; and executes on them.  at present, the only thing it does
+    ; is sets the desired game position to the desired piece
+    (go (while true
+          (let [command (<! board-commands)]
+            (swap! board assoc (:position command)
+                   (:piece command)))
+          (println "Board Commands called!!!")))
