@@ -1,6 +1,7 @@
 (ns checkers.board
   (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [cljs.core.async :refer [put! chan <!]]))
+  (:require [cljs.core.async :refer [put! chan <!]]
+            [checkers.resources :as res]))
 
 (enable-console-print!)
 
@@ -105,11 +106,10 @@
   (map (fn [pos] {pos (compute-pos-neighbors pos)})
        (range 1 33)))
 
-(defn determine-piece-color []
-  (let [color @curr-piece]
-    (cond
-      (= color :black-piece) :red-piece
-      (= color :red-piece) :black-piece)))
+(defn get-valid-piece-types []
+  (if (= (@res/board-info :curr-color) :red)
+    #{:red-piece, :selected-red-piece, :prom-red-piece, :selected-prom-red-piece}
+    #{:black-piece, :selected-black-piece, :prom-black-piece, :selected-prom-black-piece}))
 
 ; == Concurrent Processes =================================
 ; this concurrent process reacts to board click events --
@@ -117,13 +117,16 @@
 ; a black piece by sending a command to the board-commands
 ; channel
 
+; Where to put the click piece logic....?
 (go (while true
       (let [event (<! board-events)]
-        (put! board-commands
-              {:command :update-board-position
-               :position (:position event)
-               :piece @curr-piece}))
-      (swap! curr-piece determine-piece-color)))
+        (if (get (get-valid-piece-types) (@board (:position event)))
+          (println "here")
+          (println "there")))))
+        ;(put! board-commands
+        ;      {:command :update-board-position
+        ;       :position (:position event)
+        ;       :piece @curr-piece}))))
 
 ; this concurrent process receives board command messages
 ; and executes on them.  at present, the only thing it does
