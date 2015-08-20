@@ -3,7 +3,8 @@
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
             [cljs.core.async :refer [put! chan <!]]
-            [checkers.board :refer [board board-events]]))
+            [checkers.board :refer [board board-events]]
+            [checkers.output :as cout]))
 
 (enable-console-print!)
 
@@ -11,7 +12,8 @@
 ; when we click a game square, we send an event
 (defn board-click [board-pos]
   (put! board-events {:event :board-clicked
-                      :position board-pos}))
+                      :position board-pos})
+  (cout/system-out-text-delegator))
 
 ; == Board UI Drawing ===================================
 ; draw pieces based on the piece-type
@@ -52,27 +54,12 @@
            (partition 4 board)))))
 
 ; == Bootstrap ============================================
-(defonce app-state (atom {:header "Welcome to Rachelle's ClojureScript Checkers!"
-                          :instructions (str "You are the red player. To move, click "
-                                             "the piece you'd like to move and then "
-                                             "click the square you'd like to move it to.")}))
-
 (defn bootstrap-ui []
   (om/root
     checkerboard ; our UI
     board        ; our game state
     {:target (. js/document (getElementById "checkers"))})
 
-  (om/root
-    (fn [data owner]
-      (om/component (dom/h2 #js {:className "title"} (:header data))))
-    app-state
-    {:target (. js/document (getElementById "title"))})
-
-  (om/root
-    (fn [data owner]
-      (om/component (dom/p #js {:className "plain-text"} (:instructions data))))
-    app-state
-    {:target (. js/document (getElementById "instructions"))}))
+  (cout/init-text))
 
 (bootstrap-ui)

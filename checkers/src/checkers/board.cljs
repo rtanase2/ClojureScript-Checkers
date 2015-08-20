@@ -123,8 +123,7 @@
               {:command :update-board-position
                :position (:position event)
                :piece @curr-piece}))
-      (swap! curr-piece determine-piece-color)
-      (println board)))
+      (swap! curr-piece determine-piece-color)))
 
 ; this concurrent process receives board command messages
 ; and executes on them.  at present, the only thing it does
