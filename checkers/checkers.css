@@ -59,6 +59,38 @@ td {
 	background: darkslategray;
 }
 
+.selected-red-piece {
+	border-radius: 50%;
+	width: 52px;
+	height: 52px;
+	background: red;
+  box-shadow: 0 0 3px 3px yellow;
+}
+
+.selected-black-piece {
+	border-radius: 50%;
+	width: 52px;
+	height: 52px;
+	background: black;
+  box-shadow: 0 0 3px 3px yellow;
+}
+
+.selected-prom-red-piece {
+	border-radius: 50%;
+	width: 52px;
+	height: 52px;
+	background: darkred;
+  box-shadow: 0 0 3px 3px yellow;
+}
+
+.selected-prom-black-piece {
+	border-radius: 50%;
+	width: 52px;
+	height: 52px;
+	background: darkslategray;
+  box-shadow: 0 0 3px 3px yellow;
+}
+
 .title {
   font-family: 'Roboto', sans-serif;
 }
