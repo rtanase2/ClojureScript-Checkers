@@ -7,13 +7,6 @@
 
 (enable-console-print!)
 
-(defonce app-state
-  (atom {:header "Welcome to Rachelle's ClojureScript Checkers!"
-         :instructions (str "You are the red player. To move, click "
-                            "the piece you'd like to move and then "
-                            "click the square you'd like to move it to.")
-         :system-out ""}))
-
 ; == Update Move Description Text =======================
 ; Initializes the text displayed near the board
 (defn init-text []
