@@ -125,15 +125,19 @@
 ; a black piece by sending a command to the board-commands
 ; channel
 
-; Where to put the click piece logic....?
+; PUT PIECE LOGIC HERE
 (go (while true
       (let [event (<! board-events)]
+        (println (str (@res/board-info :valid-selection) " "  (@res/board-info :curr-selected)))
         (cout/system-out-text-delegator "")
         (if (get (get-valid-piece-types) (@board (:position event)))
-          (put! board-commands
+          (do
+            (put! board-commands
               {:command :update-board-position
                :position (:position event)
                :piece (determine-piece (@board (:position event)))})
+            (swap! res/board-info assoc :valid-selection true)
+            (swap! res/board-info assoc :curr-selected (:position event)))
           (cout/system-out-text-delegator (str "Invalid piece. Please choose a " (name (@res/board-info :curr-color)) " piece"))))))
 
 ; this concurrent process receives board command messages

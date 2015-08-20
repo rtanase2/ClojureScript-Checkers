@@ -12,8 +12,7 @@
 ; when we click a game square, we send an event
 (defn board-click [board-pos]
   (put! board-events {:event :board-clicked
-                      :position board-pos})
-  (cout/system-out-text-delegator))
+                      :position board-pos}))
 
 ; == Board UI Drawing ===================================
 ; draw pieces based on the piece-type

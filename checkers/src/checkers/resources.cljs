@@ -15,5 +15,5 @@
 
 (defonce board-info
   (atom {:curr-color :black
-         :valid-selected false
-         :current-selected nil}))
+         :valid-selection false
+         :curr-selected nil}))
