@@ -111,6 +111,13 @@
     #{:red-piece, :selected-red-piece, :prom-red-piece, :selected-prom-red-piece}
     #{:black-piece, :selected-black-piece, :prom-black-piece, :selected-prom-black-piece}))
 
+(defn determine-piece [piece]
+    (cond
+     (= piece :red-piece) :selected-red-piece
+     (= piece :black-piece) :selected-black-piece
+     (= piece :prom-red-piece) :selected-prom-red-piece
+     (= piece :prom-black-piece) :selected-prom-red-piece))
+
 ; == Concurrent Processes =================================
 ; this concurrent process reacts to board click events --
 ; at present, it sets the board position clicked to contain
@@ -121,8 +128,11 @@
 (go (while true
       (let [event (<! board-events)]
         (if (get (get-valid-piece-types) (@board (:position event)))
-          (println "here")
-          (println "there")))))
+          (put! board-commands
+              {:command :update-board-position
+               :position (:position event)
+               :piece (determine-piece (@board (:position event)))})
+          (println "not valid piece")))))
         ;(put! board-commands
         ;      {:command :update-board-position
         ;       :position (:position event)
