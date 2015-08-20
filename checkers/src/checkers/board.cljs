@@ -117,7 +117,11 @@
      (= piece :red-piece) :selected-red-piece
      (= piece :black-piece) :selected-black-piece
      (= piece :prom-red-piece) :selected-prom-red-piece
-     (= piece :prom-black-piece) :selected-prom-red-piece))
+     (= piece :prom-black-piece) :selected-prom-red-piece
+     (= piece :selected-red-piece) :red-piece
+     (= piece :selected-black-piece) :black-piece
+     (= piece :selected-prom-red-piece) :prom-red-piece
+     (= piece :selected-prom-black-piece) :prom-red-piece))
 
 ; == Concurrent Processes =================================
 ; this concurrent process reacts to board click events --
@@ -126,6 +130,11 @@
 ; channel
 
 ; PUT PIECE LOGIC HERE
+;
+; SOMEHOW FIGURE OUT HOW TO CHANGE TO ONLY ONCE ACTIVE PIECE AT A TIME
+; IT SHOULDN'T BE THIS HARD.
+;
+; TODO: Remove valid-selection when its not valid along with curr-selected
 (go (while true
       (let [event (<! board-events)]
         (println (str (@res/board-info :valid-selection) " "  (@res/board-info :curr-selected)))
