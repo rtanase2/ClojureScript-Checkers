@@ -14,6 +14,6 @@
          :system-out ""}))
 
 (defonce board-info
-  (atom {:curr-color :red
+  (atom {:curr-color :black
          :valid-selected false
          :current-selected nil}))
