@@ -3,7 +3,7 @@
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
             [cljs.core.async :refer [put! chan <!]]
-            [checkers.board :refer [board board-events]]))
+            [checkers.resources :refer [app-state]]))
 
 (enable-console-print!)
 
@@ -40,8 +40,9 @@
 (defn system-out-text-delegator []
   ; See what previous text was to determine what to change
   ; text to.
-  (let [board-pos (cond
-   (= 1 1) "hello"
-   (= 2 2) "hi"
-   :else "blarg")]
-    (swap! app-state assoc :system-out (str "You have clicked " (str board-pos)))))
+  (let
+    [board-pos (cond
+                  (= 2 1) "hello"
+                  (= 3 2) "hi"
+                  :else "blarg")]
+      (swap! app-state assoc :system-out (str "You have clicked " (str board-pos)))))

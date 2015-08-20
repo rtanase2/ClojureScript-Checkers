@@ -10,6 +10,7 @@ goog.addDependency("../cljs/core/async.js", ['cljs.core.async'], ['cljs.core.asy
 goog.addDependency("../checkers/board.js", ['checkers.board'], ['cljs.core', 'cljs.core.async']);
 goog.addDependency("../om/dom.js", ['om.dom'], ['cljs.core']);
 goog.addDependency("../om/core.js", ['om.core'], ['cljs.core', 'om.dom', 'goog.ui.IdGenerator']);
-goog.addDependency("../checkers/output.js", ['checkers.output'], ['checkers.board', 'cljs.core', 'om.dom', 'cljs.core.async', 'om.core']);
+goog.addDependency("../checkers/resources.js", ['checkers.resources'], ['cljs.core', 'om.dom', 'cljs.core.async', 'om.core']);
+goog.addDependency("../checkers/output.js", ['checkers.output'], ['checkers.resources', 'cljs.core', 'om.dom', 'cljs.core.async', 'om.core']);
 goog.addDependency("../checkers/ui.js", ['checkers.ui'], ['checkers.board', 'cljs.core', 'om.dom', 'cljs.core.async', 'checkers.output', 'om.core']);
 goog.addDependency("../checkers/core.js", ['checkers.core'], ['checkers.ui', 'cljs.core']);
