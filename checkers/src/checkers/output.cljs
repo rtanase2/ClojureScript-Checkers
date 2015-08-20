@@ -30,12 +30,6 @@
 
 ; Calls the correct functions to properly update the
 ; system-output text
-(defn system-out-text-delegator []
-  ; See what previous text was to determine what to change
-  ; text to.
-  (let
-    [board-pos (cond
-                  (= 2 1) "hello"
-                  (= 3 2) "hi"
-                  :else "blarg")]
-      (swap! app-state assoc :system-out (str "You have clicked " (str board-pos)))))
+(defn system-out-text-delegator [output-text]
+  ; Updates system-output text to output-text
+  (swap! app-state assoc :system-out output-text))

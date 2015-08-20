@@ -1,7 +1,8 @@
 (ns checkers.board
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :refer [put! chan <!]]
-            [checkers.resources :as res]))
+            [checkers.resources :as res]
+            [checkers.output :as cout]))
 
 (enable-console-print!)
 
@@ -127,16 +128,13 @@
 ; Where to put the click piece logic....?
 (go (while true
       (let [event (<! board-events)]
+        (cout/system-out-text-delegator "")
         (if (get (get-valid-piece-types) (@board (:position event)))
           (put! board-commands
               {:command :update-board-position
                :position (:position event)
                :piece (determine-piece (@board (:position event)))})
-          (println "not valid piece")))))
-        ;(put! board-commands
-        ;      {:command :update-board-position
-        ;       :position (:position event)
-        ;       :piece @curr-piece}))))
+          (cout/system-out-text-delegator (str "Invalid piece. Please choose a " (name (@res/board-info :curr-color)) " piece"))))))
 
 ; this concurrent process receives board command messages
 ; and executes on them.  at present, the only thing it does

@@ -10,7 +10,7 @@ goog.addDependency("../cljs/core/async/impl/timers.js", ['cljs.core.async.impl.t
 goog.addDependency("../cljs/core/async.js", ['cljs.core.async'], ['cljs.core.async.impl.channels', 'cljs.core.async.impl.dispatch', 'cljs.core', 'cljs.core.async.impl.buffers', 'cljs.core.async.impl.protocols', 'cljs.core.async.impl.ioc_helpers', 'cljs.core.async.impl.timers']);
 goog.addDependency("../om/core.js", ['om.core'], ['cljs.core', 'om.dom', 'goog.ui.IdGenerator']);
 goog.addDependency("../checkers/resources.js", ['checkers.resources'], ['cljs.core', 'om.dom', 'cljs.core.async', 'om.core']);
-goog.addDependency("../checkers/board.js", ['checkers.board'], ['checkers.resources', 'cljs.core', 'cljs.core.async']);
 goog.addDependency("../checkers/output.js", ['checkers.output'], ['checkers.resources', 'cljs.core', 'om.dom', 'cljs.core.async', 'om.core']);
+goog.addDependency("../checkers/board.js", ['checkers.board'], ['checkers.resources', 'cljs.core', 'cljs.core.async', 'checkers.output']);
 goog.addDependency("../checkers/ui.js", ['checkers.ui'], ['checkers.board', 'cljs.core', 'om.dom', 'cljs.core.async', 'checkers.output', 'om.core']);
 goog.addDependency("../checkers/core.js", ['checkers.core'], ['checkers.ui', 'cljs.core']);
