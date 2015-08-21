@@ -140,12 +140,20 @@
 
 (defn move-piece [event]
   (let [clicked-pos (:position event)
-        clicked-piece-type (@board clicked-pos)]
-    ; If the clicked piece is empty, see if it is a
-    ; neighbor. Else, it is not a valid move so print
-    ; and error message.
+        clicked-piece-type (@board clicked-pos)
+        curr-selected (@res/board-info :curr-selected)
+        pos-neighbors (compute-pos-neighbors curr-selected)]
+    ; Check if the clicked piece is empty.
     (if (= clicked-piece-type :empty-piece)
-      ()
+      ; If it is empty, see if it is a neighbor
+      (if (get (set pos-neighbors) clicked-pos)
+        ; If it is a neighbor, then move the piece
+        (println "valid move!")
+        ; Else, it is not a neighbor and print saying it
+        ; is not a valid move
+        (println "invalid move!"))
+      ; Else, it is occupied, so it is not a valid move
+      ; so print and error message.
       (cout/update-system-out-text
            "Cannot move there. Please try again."))))
 
