@@ -148,14 +148,31 @@
       ; If it is empty, see if it is a neighbor
       (if (get (set pos-neighbors) clicked-pos)
         ; If it is a neighbor, then move the piece
-        (println "valid move!")
+        (do
+          (update-board-commands
+           :update-board-position
+           curr-selected
+           :empty-piece)
+          (swap-in-board-info! :valid-selection false)
+          (swap-in-board-info! :curr-selected nil)
+          (swap-in-board-info!
+           :curr-color
+           (if (= (@res/board-info :curr-color) :red)
+             :black
+             :red))
+          (update-board-commands
+           :update-board-position
+           clicked-pos
+           (determine-piece (@board curr-selected))))
         ; Else, it is not a neighbor and print saying it
         ; is not a valid move
-        (println "invalid move!"))
+        (cout/update-system-out-text
+         (str "You cannot move the currently selected "
+              "piece there. Please try again.")))
       ; Else, it is occupied, so it is not a valid move
       ; so print and error message.
       (cout/update-system-out-text
-           "Cannot move there. Please try again."))))
+       "Cannot move there. Please try again."))))
 
 ; === Click Functions ===================================
 ; Ensure that clicked piece is the correct color and has
@@ -246,21 +263,21 @@
 (defn click-delegator [event]
   (validate-clicked-piece event))
 
-  ; == Concurrent Processes =================================
-  ; this concurrent process reacts to board click events --
-  ; at present, it sets the board position clicked to contain
-  ; a black piece by sending a command to the board-commands
-  ; channel
+; == Concurrent Processes =================================
+; this concurrent process reacts to board click events --
+; at present, it sets the board position clicked to contain
+; a black piece by sending a command to the board-commands
+; channel
 
-  (go (while true
-        (let [event (<! board-events)]
-          (cout/clear-system-out)
-          (click-delegator event))))
+(go (while true
+      (let [event (<! board-events)]
+        (cout/clear-system-out)
+        (click-delegator event))))
 
-  ; this concurrent process receives board command messages
-  ; and executes on them.  at present, the only thing it does
-  ; is sets the desired game position to the desired piece
-  (go (while true
-        (let [command (<! board-commands)]
-          (swap! board assoc (:position command)
-                 (:piece command)))))
+; this concurrent process receives board command messages
+; and executes on them.  at present, the only thing it does
+; is sets the desired game position to the desired piece
+(go (while true
+      (let [command (<! board-commands)]
+        (swap! board assoc (:position command)
+               (:piece command)))))
