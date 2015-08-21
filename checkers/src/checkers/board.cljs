@@ -141,7 +141,6 @@
         (if (get (get-valid-piece-types) (@board (:position event)))
           (if (= (@res/board-info :curr-selected) (:position event))
             (do
-              (println "already selected!!")
               (put! board-commands
                     {:command :update-board-position
                      :position (@res/board-info :curr-selected)
@@ -149,7 +148,6 @@
               (swap! res/board-info assoc :valid-selection false)
               (swap! res/board-info assoc :curr-selected nil))
             (do
-              (println "not already selected")
               (put! board-commands
                     {:command :update-board-position
                      :position (:position event)
@@ -160,9 +158,7 @@
                      :position (@res/board-info :curr-selected)
                      :piece (determine-piece (@board (@res/board-info :curr-selected)))}))
               (swap! res/board-info assoc :valid-selection true)
-              (swap! res/board-info assoc :curr-selected (:position event))
-              (println (@res/board-info :valid-selection))
-              (println (@res/board-info :curr-selected))))
+              (swap! res/board-info assoc :curr-selected (:position event))))
 
             (cout/system-out-text-delegator (str "Invalid piece. Please choose a " (name (@res/board-info :curr-color)) " piece"))))))
 
@@ -172,5 +168,4 @@
     (go (while true
           (let [command (<! board-commands)]
             (swap! board assoc (:position command)
-                   (:piece command)))
-          (println "Board Commands called!!!")))
+                   (:piece command)))))
