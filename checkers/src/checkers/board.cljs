@@ -91,8 +91,8 @@
              [(if (not top-row?)
                 (if row-even?
                   [(if (not left-edge?)
-                    up-left)
-                  up-right]
+                     up-left)
+                   up-right]
                   [(if (not right-edge?)
                      up-right)
                    up-left]))
@@ -129,6 +129,82 @@
    (= piece :selected-prom-red-piece) :prom-red-piece
    (= piece :selected-prom-black-piece) :prom-red-piece))
 
+(defn update-board-commands [command, position, piece]
+  (put! board-commands
+        {:command command
+         :position position
+         :piece piece}))
+
+(defn validate-clicked-piece [event]
+  (let [curr-selected (@res/board-info :curr-selected)
+        curr-selected-type (@board curr-selected)
+        swap-valid-selection! #(swap! res/board-info assoc :valid-selection %)
+        swap-curr-selected! #(swap! res/board-info assoc :curr-selected %)
+        clicked-pos (:position event)
+        clicked-piece-type (@board clicked-pos)
+        current-player-color (name (@res/board-info :curr-color))]
+    ; If the piece clicked is from the correct player
+    (if (get (get-valid-piece-types) clicked-piece-type)
+      ; If the piece that is clicked is the current selected piece
+      (if (= curr-selected clicked-pos)
+        ; Then unselect it and update res/board-info to show there is
+        ; no valid selection and no piece currently selected
+        (do
+          (update-board-commands
+           :update-board-position
+           curr-selected
+           (determine-piece curr-selected-type))
+          (swap-valid-selection! false)
+          (swap-curr-selected! nil))
+        ; Else, check if the piece has possible moves
+        (if (some #(= :empty-piece %)
+                  (map #(@board %)
+                       (compute-pos-neighbors clicked-pos)))
+          ; If there are valid moves available, update the board by
+          ; unselecting old selected piece, selecting the clicked piece
+          ; and showing that valid selection is chosen and which space it is
+          (do
+            (put! board-commands
+                  {:command :update-board-position
+                   :position clicked-pos
+                   :piece (determine-piece clicked-piece-type)})
+            (if (@res/board-info :valid-selection)
+              (update-board-commands
+               :update-board-position
+               curr-selected
+               (determine-piece curr-selected-type)))
+            (swap-valid-selection! true)
+            (swap-curr-selected! clicked-pos))
+          ; Else, print an error message stating that there are no
+          ; valid moves for that piece and to try again
+          (do (cout/update-system-out-text
+               (str "Selected piece does not have any available moves. "
+                    "Please select a different piece."))
+            (if (@res/board-info :valid-selection)
+              (update-board-commands
+               :update-board-position
+               curr-selected
+               (determine-piece curr-selected-type)))
+            (swap-valid-selection! false)
+            (swap-curr-selected! nil))))
+      ; Else, print an error message stating which color piece a
+      ; valid choice, unselect current selected piece and update the
+      ; board-info map's valid-selection and curr-selected values
+      (do
+        (cout/update-system-out-text
+         (str "Invalid piece. Please choose a " current-player-color
+              " piece."))
+        (if (@res/board-info :valid-selection)
+          (update-board-commands
+           :update-board-position
+           curr-selected
+           (determine-piece curr-selected-type)))
+        (swap-valid-selection! false)
+        (swap-curr-selected! nil)))))
+
+(defn click-delegator [event]
+  (validate-clicked-piece event))
+
 ; == Concurrent Processes =================================
 ; this concurrent process reacts to board click events --
 ; at present, it sets the board position clicked to contain
@@ -136,72 +212,9 @@
 ; channel
 
 (go (while true
-      (let [event (<! board-events)
-            curr-selected (@res/board-info :curr-selected)
-            swap-valid-selection! #(swap! res/board-info assoc :valid-selection %)
-            swap-curr-selected! #(swap! res/board-info assoc :curr-selected %)
-            clicked-square-type (@board (:position event))
-            current-player-color (name (@res/board-info :curr-color))]
-        (println (:position event))
-        (println (compute-pos-neighbors (:position event)))
+      (let [event (<! board-events)]
         (cout/clear-system-out)
-        ; If the piece clicked is from the correct player
-        (if (get (get-valid-piece-types) clicked-square-type)
-          ; If the piece that is clicked is the current selected piece
-          (if (= curr-selected (:position event))
-            ; Then unselect it and update res/board-info to show there is
-            ; no valid selection and no piece currently selected
-            (do
-              (put! board-commands
-                    {:command :update-board-position
-                     :position curr-selected
-                     :piece (determine-piece (@board curr-selected))})
-              (swap-valid-selection! false)
-              (swap-curr-selected! nil))
-            ; Else, check if the piece has possible moves
-            (if (some #(= :empty-piece %) (map #(@board %) (compute-pos-neighbors (:position event))))
-              ; If there are valid moves available, update the board by
-              ; unselecting old selected piece, selecting the clicked piece
-              ; and showing that valid selection is chosen and which space it is
-              (do
-                (put! board-commands
-                      {:command :update-board-position
-                       :position (:position event)
-                       :piece (determine-piece clicked-square-type)})
-                (if (@res/board-info :valid-selection)
-                  (put! board-commands
-                        {:command :update-board-position
-                         :position curr-selected
-                         :piece (determine-piece (@board curr-selected))}))
-                (swap-valid-selection! true)
-                (swap-curr-selected! (:position event)))
-              ; Else, print an error message stating that there are no
-              ; valid moves for that piece and to try again
-              (do (cout/update-system-out-text
-                   (str "Selected piece does not have any available moves. "
-                        "Please select a different " current-player-color
-                        " piece."))
-                (if (@res/board-info :valid-selection)
-                  (put! board-commands
-                        {:command :update-board-position
-                         :position curr-selected
-                         :piece (determine-piece (@board curr-selected))}))
-                (swap-valid-selection! false)
-                (swap-curr-selected! nil))))
-          ; Else, print an error message stating which color piece a
-          ; valid choice, unselect current selected piece and update the
-          ; board-info map's valid-selection and curr-selected values
-          (do
-            (cout/update-system-out-text
-             (str "Invalid piece. Please choose a " current-player-color
-                  " piece"))
-            (if (@res/board-info :valid-selection)
-              (put! board-commands
-                    {:command :update-board-position
-                     :position curr-selected
-                     :piece (determine-piece (@board curr-selected))}))
-            (swap-valid-selection! false)
-            (swap-curr-selected! nil))))))
+        (click-delegator event))))
 
 ; this concurrent process receives board command messages
 ; and executes on them.  at present, the only thing it does
