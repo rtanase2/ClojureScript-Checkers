@@ -83,7 +83,7 @@
                    (- pos 4))
         down-left (if row-odd? (+ pos 4)
                     (+ pos 5))
-        down-right (if row-odd? (+ pos 3)
+        down-right (if row-odd? (+ pos 5)
                      (+ pos 4))]
     (remove nil?
             (flatten
