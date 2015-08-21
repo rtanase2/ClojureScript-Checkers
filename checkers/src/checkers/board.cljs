@@ -161,7 +161,6 @@
                                       < >)
                                     curr-selected %)
                                   pos-neighbors))]
-    (println valid-neighbors)
     ; Check if the clicked piece is empty.
     (if (= clicked-piece-type :empty-piece)
       ; If it is empty, see if it is a neighbor
@@ -205,7 +204,17 @@
         clicked-piece-type (@board clicked-pos)
         current-player-color (name (@res/board-info
                                     :curr-color))
-        valid-selection? (@res/board-info :valid-selection)]
+        valid-selection? (@res/board-info :valid-selection)
+        pos-neighbors (compute-pos-neighbors clicked-pos)
+        valid-neighbors (if (re-find #"prom"
+                                     (name clicked-piece-type))
+                          pos-neighbors
+                          (filter #((if
+                                      (= current-player-color
+                                         "red")
+                                      < >)
+                                    clicked-pos %)
+                                  pos-neighbors))]
     ; If the piece clicked is from the correct player
     (if (get (get-valid-piece-types) clicked-piece-type)
       ; If the piece that is clicked is the current
@@ -224,8 +233,7 @@
         ; Else, check if the piece has possible moves
         (if (some #(= :empty-piece %)
                   (map #(@board %)
-                       (compute-pos-neighbors
-                        clicked-pos)))
+                       valid-neighbors))
           ; If there are valid moves available, update
           ; the board by unselecting old selected piece,
           ; selecting the clicked piece and showing that
