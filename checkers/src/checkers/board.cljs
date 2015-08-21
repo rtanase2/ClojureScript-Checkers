@@ -13,6 +13,10 @@
 ;     :black-piece
 ;     :prom-red-piece
 ;     :prom-black-piece
+;     :selected-red-piece
+;     :selected-black-piece
+;     :selected-prom-red-piece
+;     :selected-prom-black-piece
 ;     :empty
 ;
 ; The board is laid out as a 32 element map, one element
@@ -123,11 +127,17 @@
    (= piece :red-piece) :selected-red-piece
    (= piece :black-piece) :selected-black-piece
    (= piece :prom-red-piece) :selected-prom-red-piece
-   (= piece :prom-black-piece) :selected-prom-red-piece
+   (= piece :prom-black-piece) :selected-prom-black-piece
    (= piece :selected-red-piece) :red-piece
    (= piece :selected-black-piece) :black-piece
    (= piece :selected-prom-red-piece) :prom-red-piece
-   (= piece :selected-prom-black-piece) :prom-red-piece))
+   (= piece :selected-prom-black-piece) :prom-black-piece))
+
+(defn prom-piece [piece]
+  (cond
+   (= piece :red-piece) :prom-red-piece
+   (= piece :black-piece) :prom-black-piece
+   :else piece))
 
 (defn update-board-commands [command, position, piece]
   (put! board-commands
@@ -137,6 +147,20 @@
 
 (defn swap-in-board-info! [k v]
   (swap! res/board-info assoc k v))
+
+(defn change-to-prom? [pos]
+  (let [curr-row (Math/ceil (/ pos 4))
+        curr-color (@res/board-info :curr-color)]
+    ; If the current color is red and the pos is
+    ; in the bottom row or if the current color
+    ; is black and the pos is in the top row,
+    ; return true. Else return false
+    (println curr-row)
+    (println curr-color)
+    (if (or (and (= bottom-row curr-row) (= curr-color :red))
+            (and (= top-row curr-row) (= curr-color :black)))
+      true
+      false)))
 
 (defn move-piece [event]
   (let [clicked-pos (:position event)
@@ -172,17 +196,26 @@
            :update-board-position
            curr-selected
            :empty-piece)
+          ; If the piece is in a place where it could
+          ; be promoted to king
+          (if (change-to-prom? clicked-pos)
+            ; If the piece is in a pace where it can
+            ; be promoted to king
+            (update-board-commands
+             :update-board-position
+             clicked-pos
+             (prom-piece (determine-piece (@board curr-selected))))
+            ; Else move the piece and unselect it
+            (update-board-commands
+             :update-board-position
+             clicked-pos
+             (determine-piece (@board curr-selected))))
           (swap-in-board-info! :valid-selection false)
           (swap-in-board-info! :curr-selected nil)
-          (swap-in-board-info!
-           :curr-color
-           (if (= player-color :red)
-             :black
-             :red))
-          (update-board-commands
-           :update-board-position
-           clicked-pos
-           (determine-piece (@board curr-selected))))
+          (swap-in-board-info! :curr-color
+                               (if (= player-color :red)
+                                 :black
+                                 :red)))
         ; Else, it is not a neighbor and print saying it
         ; is not a valid move
         (cout/update-system-out-text
