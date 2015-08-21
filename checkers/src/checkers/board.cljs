@@ -142,12 +142,32 @@
   (let [clicked-pos (:position event)
         clicked-piece-type (@board clicked-pos)
         curr-selected (@res/board-info :curr-selected)
-        pos-neighbors (compute-pos-neighbors curr-selected)]
+        pos-neighbors (set (compute-pos-neighbors
+                            curr-selected))
+        curr-selected-type (name (@board curr-selected))
+        player-color (@res/board-info :curr-color)
+        ; If it has prom in the name, it can move both ways
+        ; If it doesn't have prom in the name it can only move
+        ; forward.
+        ;
+        ; Forward for red is if the neighbor space is
+        ; greater than the currently selected piece
+        ; Forward for black is if the neighbor space is
+        ; less than the currently selected piece)
+        valid-neighbors (if (re-find #"prom"
+                                     curr-selected-type)
+                          pos-neighbors
+                          (filter #((if (= player-color :red)
+                                      < >)
+                                    curr-selected %)
+                                  pos-neighbors))]
+    (println valid-neighbors)
     ; Check if the clicked piece is empty.
     (if (= clicked-piece-type :empty-piece)
       ; If it is empty, see if it is a neighbor
-      (if (get (set pos-neighbors) clicked-pos)
-        ; If it is a neighbor, then move the piece
+      (if (get (set valid-neighbors) clicked-pos)
+        ; If it is a valid neighbor, then update the
+        ; board to display move as well as board-info
         (do
           (update-board-commands
            :update-board-position
@@ -157,7 +177,7 @@
           (swap-in-board-info! :curr-selected nil)
           (swap-in-board-info!
            :curr-color
-           (if (= (@res/board-info :curr-color) :red)
+           (if (= player-color :red)
              :black
              :red))
           (update-board-commands
