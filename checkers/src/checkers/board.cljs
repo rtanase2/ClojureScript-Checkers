@@ -85,22 +85,26 @@
                     (+ pos 3))
         down-right (if row-odd? (+ pos 5)
                      (+ pos 4))]
-    (remove nil? ;THERE IS SOMETHING WRONG HERE!!!! FIND IT!!!
+    (remove nil?
             (flatten
+             ; Determine which upper pieces to include
              [(if (not top-row?)
                 (if row-even?
-                  [up-left up-right]
                   [(if (not left-edge?)
-                     up-left)
-                   (if (not right-edge?)
-                     up-right)]))
+                    up-left)
+                  up-right]
+                  [(if (not right-edge?)
+                     up-right)
+                   up-left]))
+              ; Determine which lower pieces to include
               (if (not bottom-row?)
                 (if row-odd?
-                  [down-left down-right]
+                  [(if (not right-edge?)
+                     down-right)
+                   down-left]
                   [(if (not left-edge?)
                      down-left)
-                   (if (not right-edge?)
-                     down-right)]))]))))
+                   down-right]))]))))
 
 ; compute neighbors for every board position
 (defn compute-neighbor-positions []
