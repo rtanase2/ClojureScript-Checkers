@@ -83,7 +83,7 @@
                    (- pos 4))
         down-left (if row-odd? (+ pos 4)
                     (+ pos 5))
-        down-right (if row-odd? (+ pos 5)
+        down-right (if row-odd? (+ pos 3)
                      (+ pos 4))]
     (remove nil?
             (flatten
@@ -138,6 +138,8 @@
             swap-curr-selected! #(swap! res/board-info assoc :curr-selected %)
             clicked-square-type (@board (:position event))
             current-player-color (name (@res/board-info :curr-color))]
+        (println (:position event))
+        (println (compute-pos-neighbors (:position event)))
         (cout/clear-system-out)
         ; If the piece clicked is from the correct player
         (if (get (get-valid-piece-types) clicked-square-type)
