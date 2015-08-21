@@ -30,6 +30,9 @@
 
 ; Calls the correct functions to properly update the
 ; system-output text
-(defn system-out-text-delegator [output-text]
+(defn update-system-out-text [output-text]
   ; Updates system-output text to output-text
   (swap! app-state assoc :system-out output-text))
+
+(defn clear-system-out []
+  (update-system-out-text ""))

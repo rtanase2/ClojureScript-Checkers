@@ -109,8 +109,10 @@
 
 (defn get-valid-piece-types []
   (if (= (@res/board-info :curr-color) :red)
-    #{:red-piece, :selected-red-piece, :prom-red-piece, :selected-prom-red-piece}
-    #{:black-piece, :selected-black-piece, :prom-black-piece, :selected-prom-black-piece}))
+    #{:red-piece, :selected-red-piece,
+      :prom-red-piece, :selected-prom-red-piece}
+    #{:black-piece, :selected-black-piece,
+      :prom-black-piece, :selected-prom-black-piece}))
 
 (defn determine-piece [piece]
   (cond
@@ -129,43 +131,51 @@
 ; a black piece by sending a command to the board-commands
 ; channel
 
-; PUT PIECE LOGIC HERE
-;
-; SOMEHOW FIGURE OUT HOW TO CHANGE TO ONLY ONCE ACTIVE PIECE AT A TIME
-; IT SHOULDN'T BE THIS HARD.
-;
-; TODO: Remove valid-selection when its not valid along with curr-selected
 (go (while true
-      (let [event (<! board-events)]
-        (cout/system-out-text-delegator "")
-        (if (get (get-valid-piece-types) (@board (:position event)))
-          (if (= (@res/board-info :curr-selected) (:position event))
+      (let [event (<! board-events)
+            curr-selected (@res/board-info :curr-selected)
+            swap-valid-selection! #(swap! res/board-info assoc :valid-selection %)
+            swap-curr-selected! #(swap! res/board-info assoc :curr-selected %)
+            clicked-square-type (@board (:position event))]
+        (cout/clear-system-out)
+        ; If the piece clicked is from the correct player
+        (if (get (get-valid-piece-types) clicked-square-type)
+          ; If the piece that is clicked is the current selected piece
+          (if (= curr-selected (:position event))
+            ; Then unselect it and update res/board-info to show there is
+            ; no valid selection and no piece currently selected
             (do
               (put! board-commands
                     {:command :update-board-position
-                     :position (@res/board-info :curr-selected)
-                     :piece (determine-piece (@board (@res/board-info :curr-selected)))})
-              (swap! res/board-info assoc :valid-selection false)
-              (swap! res/board-info assoc :curr-selected nil))
+                     :position curr-selected
+                     :piece (determine-piece (@board curr-selected))})
+              (swap-valid-selection! false)
+              (swap-curr-selected! :curr-selected nil))
+            ; Else, unselect old selected piece, select the clicked piece
+            ; and show that valid selection is chosen and which space it is
             (do
               (put! board-commands
                     {:command :update-board-position
                      :position (:position event)
-                     :piece (determine-piece (@board (:position event)))})
+                     :piece (determine-piece clicked-square-type)})
               (if (@res/board-info :valid-selection)
                 (put! board-commands
-                    {:command :update-board-position
-                     :position (@res/board-info :curr-selected)
-                     :piece (determine-piece (@board (@res/board-info :curr-selected)))}))
-              (swap! res/board-info assoc :valid-selection true)
-              (swap! res/board-info assoc :curr-selected (:position event))))
+                      {:command :update-board-position
+                       :position curr-selected
+                       :piece (determine-piece (@board curr-selected))}))
+              (swap-valid-selection! true)
+              (swap-curr-selected! (:position event))))
+          ; Else, print an error message stating which color piece a
+          ; valid choice
+          (cout/update-system-out-text
+           (str "Invalid piece. Please choose a "
+                (name (@res/board-info :curr-color))
+                " piece"))))))
 
-            (cout/system-out-text-delegator (str "Invalid piece. Please choose a " (name (@res/board-info :curr-color)) " piece"))))))
-
-    ; this concurrent process receives board command messages
-    ; and executes on them.  at present, the only thing it does
-    ; is sets the desired game position to the desired piece
-    (go (while true
-          (let [command (<! board-commands)]
-            (swap! board assoc (:position command)
-                   (:piece command)))))
+; this concurrent process receives board command messages
+; and executes on them.  at present, the only thing it does
+; is sets the desired game position to the desired piece
+(go (while true
+      (let [command (<! board-commands)]
+        (swap! board assoc (:position command)
+               (:piece command)))))
