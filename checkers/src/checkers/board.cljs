@@ -68,7 +68,137 @@
 ; positional constants
 (def top-row 1)
 (def bottom-row 8)
-(def curr-piece (atom :black-piece))
+
+(defn which-corner? [main-pos corner-pos]
+  (let [curr-row (Math/ceil (/ main-pos 4))
+        row-odd? (odd? curr-row)
+        up-left (if row-odd? (- main-pos 4)
+                  (- main-pos 5))
+        up-right (if row-odd? (- main-pos 3)
+                   (- main-pos 4))
+        down-left (if row-odd? (+ main-pos 4)
+                    (+ main-pos 3))
+        down-right (if row-odd? (+ main-pos 5)
+                     (+ main-pos 4))]
+    (cond
+     (= corner-pos up-left) :up-left
+     (= corner-pos up-right) :up-right
+     (= corner-pos down-left) :down-left
+     (= corner-pos down-right) :down-right)))
+
+(defn calc-skip-pos [pos corner]
+  (cond
+   (= corner :up-left) (- pos 9)
+   (= corner :up-right) (- pos 7)
+   (= corner :down-left) (+ pos 7)
+   (= corner :down-right) (+ pos 9)))
+
+(defn find-skipped-piece [curr-selected clicked-pos]
+  (let [offset (- clicked-pos curr-selected)
+        direction (cond
+                   (= offset -7) :up-right
+                   (= offset -9) :up-left
+                   (= offset 9) :down-right
+                   (= offset 7) :down-left)
+        curr-row (Math/ceil (/ curr-selected 4))
+        row-odd? (odd? curr-row)]
+    (cond
+     (= direction :up-right) (if row-odd?
+                               (- curr-selected 3)
+                               (- curr-selected 4))
+     (= direction :down-right) (if row-odd?
+                                 (+ curr-selected 5)
+                                 (+ curr-selected 4))
+     (= direction :up-left) (if row-odd?
+                              (- curr-selected 4)
+                              (- curr-selected 5))
+     (= direction :down-left) (if row-odd?
+                                (+ curr-selected 4)
+                                (+ curr-selected 3)))))
+
+; Gets piece-pos which is an int and pos-skips-corners
+; which is a vector of keywords containing a combintaion
+; of :up-right, :up-left, :down-right and :down-left.
+(defn skips-possible? [piece-pos pos-skip-corners]
+  (let [sec-top-row 2
+        sec-bottom-row 7
+        curr-row (Math/ceil (/ piece-pos 4))
+        top-edge? (or (= curr-row top-row)
+                      (= curr-row sec-top-row))
+        bottom-edge? (or (= curr-row bottom-row)
+                         (= curr-row sec-bottom-row))
+        right-edge? (= (mod piece-pos 4) 0)
+        left-edge? (= (mod piece-pos 4) 1)
+        filter-val (fn [k vect]
+                     (filter #(= k %) vect))]
+    (cond
+     (and bottom-edge? left-edge?)
+     (filter-val :up-right pos-skip-corners)
+     (and bottom-edge? right-edge?)
+     (filter-val :up-left pos-skip-corners)
+     (and top-edge? left-edge?)
+     (filter-val :down-right pos-skip-corners)
+     (and top-edge? right-edge?)
+     (filter-val :down-left pos-skip-corners)
+     bottom-edge? (as->
+                   (filter-val :up-right pos-skip-corners)
+                   v
+                   (filter-val :up-left v))
+     top-edge? (as->
+                (filter-val :down-right pos-skip-corners)
+                v
+                (filter-val :down-left v))
+     right-edge? (as->
+                  (filter-val :down-left pos-skip-corners)
+                  v
+                  (filter-val :up-left v))
+     left-edge? (as->
+                 (filter-val :down-right pos-skip-corners)
+                 v
+                 (filter-val :up-right v))
+     :else pos-skip-corners)))
+
+(defn add-skips [piece-pos neighbors]
+  (let [curr-color (name (@res/board-info :curr-color))
+        other-color (if (= curr-color "black")
+                      "red" "black")
+        pos-skips (filter (fn [pos]
+                            (or (= (keyword
+                                    (str "prom-"
+                                         other-color
+                                         "-piece"))
+                                   (@board pos))
+                                (= (keyword
+                                    (str other-color
+                                         "-piece"))
+                                   (@board pos))))
+                          neighbors)
+        valid-immediate-neighbors (filter
+                                   #(= :empty-piece (@board %))
+                                   neighbors)]
+    (as-> pos-skips skips-vec
+          ; Takes vector of positions and returns
+          ; an array of keywords saying which corner
+          ; that position is comparet to the piece-pos
+          (map
+           #(which-corner? piece-pos %)
+           skips-vec)
+          ; Removes invalid skips. Skips that cannot
+          ; exist based off of position. For example,
+          ; the piece is on the left edge, so no up-left
+          ; or down-left skips can exist
+          (skips-possible? piece-pos skips-vec)
+          ; Takes the keyword vector and computes
+          ; the skip positions
+          (map
+           #(calc-skip-pos piece-pos %)
+           skips-vec)
+          ; Filters out all positions that are not
+          ; type :empty-piece
+          (concat valid-immediate-neighbors
+                  (filter
+                   #(= (@board %) :empty-piece)
+                   skips-vec)))))
 
 ; given a board position, return the position of neighbors
 ; [NOTE:] Challengee should investigate memoization of
@@ -89,26 +219,27 @@
                     (+ pos 3))
         down-right (if row-odd? (+ pos 5)
                      (+ pos 4))]
-    (remove nil?
-            (flatten
-             ; Determine which upper pieces to include
-             [(if (not top-row?)
-                (if row-even?
-                  [(if (not left-edge?)
-                     up-left)
-                   up-right]
-                  [(if (not right-edge?)
-                     up-right)
-                   up-left]))
-              ; Determine which lower pieces to include
-              (if (not bottom-row?)
-                (if row-odd?
-                  [(if (not right-edge?)
-                     down-right)
-                   down-left]
-                  [(if (not left-edge?)
-                     down-left)
-                   down-right]))]))))
+    (as-> (remove nil?
+                  (flatten
+                   ; Determine which upper pieces to include
+                   [(if (not top-row?)
+                      (if row-even?
+                        [(if (not left-edge?)
+                           up-left)
+                         up-right]
+                        [(if (not right-edge?)
+                           up-right)
+                         up-left]))
+                    ; Determine which lower pieces to include
+                    (if (not bottom-row?)
+                      (if row-odd?
+                        [(if (not right-edge?)
+                           down-right)
+                         down-left]
+                        [(if (not left-edge?)
+                           down-left)
+                         down-right]))])) neighbors
+          (add-skips pos neighbors))))
 
 ; compute neighbors for every board position
 (defn compute-neighbor-positions []
@@ -155,8 +286,6 @@
     ; in the bottom row or if the current color
     ; is black and the pos is in the top row,
     ; return true. Else return false
-    (println curr-row)
-    (println curr-color)
     (if (or (and (= bottom-row curr-row) (= curr-color :red))
             (and (= top-row curr-row) (= curr-color :black)))
       true
@@ -189,9 +318,20 @@
     (if (= clicked-piece-type :empty-piece)
       ; If it is empty, see if it is a neighbor
       (if (get (set valid-neighbors) clicked-pos)
-        ; If it is a valid neighbor, then update the
-        ; board to display move as well as board-info
+        ; If it is a valid neighbor, then check
+        ; if the move is a skip and update properly
         (do
+          (if (> (Math/abs (- clicked-pos curr-selected)) 5)
+            ; Then it is a skip
+            ; FIND IF ROW ODD TO SEE WHAT TO DELETE CHECK TO FIND WHICH WAY THEY SKIPPED AND THEN FIND MIDDLE PIECE
+            (let [skipped-piece (find-skipped-piece
+                                 curr-selected
+                                 clicked-pos)]
+              (update-board-commands
+               :update-board-position
+               skipped-piece
+               :empty-piece)))
+
           (update-board-commands
            :update-board-position
            curr-selected
@@ -226,7 +366,6 @@
       (cout/update-system-out-text
        "Cannot move there. Please try again."))))
 
-; === Click Functions ===================================
 ; Ensure that clicked piece is the correct color and has
 ; valid moves available to it. If not, print a message
 ; to tell the player why it did not work
@@ -320,10 +459,6 @@
           (swap-in-board-info! :valid-selection false)
           (swap-in-board-info! :curr-selected nil))))))
 
-; Call the correct functions to handle a click
-(defn click-delegator [event]
-  (validate-clicked-piece event))
-
 ; == Concurrent Processes =================================
 ; this concurrent process reacts to board click events --
 ; at present, it sets the board position clicked to contain
@@ -333,7 +468,7 @@
 (go (while true
       (let [event (<! board-events)]
         (cout/clear-system-out)
-        (click-delegator event))))
+        (validate-clicked-piece event))))
 
 ; this concurrent process receives board command messages
 ; and executes on them.  at present, the only thing it does
