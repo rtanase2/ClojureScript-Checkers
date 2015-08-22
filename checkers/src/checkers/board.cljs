@@ -140,22 +140,14 @@
      (filter-val :down-right pos-skip-corners)
      (and top-edge? right-edge?)
      (filter-val :down-left pos-skip-corners)
-     bottom-edge? (as->
-                   (filter-val :up-right pos-skip-corners)
-                   v
-                   (filter-val :up-left v))
-     top-edge? (as->
-                (filter-val :down-right pos-skip-corners)
-                v
-                (filter-val :down-left v))
-     right-edge? (as->
-                  (filter-val :down-left pos-skip-corners)
-                  v
-                  (filter-val :up-left v))
-     left-edge? (as->
-                 (filter-val :down-right pos-skip-corners)
-                 v
-                 (filter-val :up-right v))
+     bottom-edge? (concat (filter-val :up-right pos-skip-corners)
+                          (filter-val :up-left pos-skip-corners))
+     top-edge?(concat (filter-val :down-right pos-skip-corners)
+                      (filter-val :down-left pos-skip-corners))
+     right-edge? (concat (filter-val :down-left pos-skip-corners)
+                         (filter-val :up-left pos-skip-corners))
+     left-edge? (concat (filter-val :up-right pos-skip-corners)
+                        (filter-val :down-right pos-skip-corners))
      :else pos-skip-corners)))
 
 (defn add-skips [piece-pos neighbors]
