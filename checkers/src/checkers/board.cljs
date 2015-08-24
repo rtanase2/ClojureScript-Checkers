@@ -266,13 +266,13 @@
                                  down-right]))]))
         empty-neighbors (find-empty-neighbors neighbors)
         valid-empty-neighbors (if (re-find #"prom"
-                                          piece-type)
-                               empty-neighbors
-                               (filter #((if
-                                           (= (@res/board-info :curr-color)
-                                              :red)
-                                           < >)
-                                         pos %) empty-neighbors))
+                                           piece-type)
+                                empty-neighbors
+                                (filter #((if
+                                            (= (@res/board-info :curr-color)
+                                               :red)
+                                            < >)
+                                          pos %) empty-neighbors))
         neighbors-with-skips (add-skips pos neighbors)
         valid-neighbors-with-skips (if (re-find #"prom"
                                                 piece-type)
@@ -284,8 +284,6 @@
                                                pos %) neighbors-with-skips))]
     ; If the empty-neighbors and the neighbor-with-skips
     ; are not equal, then there must be a skip
-    (println (str "vnws: " valid-neighbors-with-skips))
-    (println (str "en:" valid-empty-neighbors))
     (if (and (not (= valid-empty-neighbors
                      valid-neighbors-with-skips))
              (re-find (re-pattern
@@ -293,9 +291,7 @@
                         (@res/board-info :curr-color)))
                       piece-type))
       (do
-        (println "in true")
-        (update-board-info! :skip-available? true))
-      (println "in false"))
+        (update-board-info! :skip-available? true)))
     neighbors-with-skips))
 
 ; Computes neighbors for every piece in pieces-vec.
@@ -420,7 +416,7 @@
                       (add-board-command
                        :update-board-position
                        clicked-pos
-                       (prom-piece (update-piece-type (@board curr-selected)))))
+                       (prom-piece (@board curr-selected))))
 
                     ; Else move the piece and unselect it
                     (add-board-command
@@ -526,10 +522,11 @@
                    :piece (update-piece-type
                            clicked-piece-type)})
             (if (@res/board-info :valid-selection?)
-              (add-board-command
-               :update-board-position
-               curr-selected
-               (update-piece-type curr-selected-type)))
+              (do
+                (add-board-command
+                 :update-board-position
+                 curr-selected
+                 (update-piece-type curr-selected-type))))
             (update-board-info! :valid-selection? true)
             (update-board-info! :curr-selected clicked-pos))
           ; Else, print an error message stating that
@@ -540,10 +537,11 @@
                     "available moves. Please select a "
                     "different piece."))
             (if (@res/board-info :valid-selection?)
-              (add-board-command
-               :update-board-position
-               curr-selected
-               (update-piece-type curr-selected-type)))
+              (do
+                (add-board-command
+                 :update-board-position
+                 curr-selected
+                 (update-piece-type curr-selected-type))))
             (update-board-info! :valid-selection? false)
             (update-board-info! :curr-selected nil))))
       ; Else, check if there is a currently selected piece
@@ -560,10 +558,10 @@
                 current-player-color
                 " piece."))
           (if (@res/board-info :valid-selection?)
-            (add-board-command
-             :update-board-position
-             curr-selected
-             (update-piece-type curr-selected-type)))
+              (add-board-command
+               :update-board-position
+               curr-selected
+               (update-piece-type curr-selected-type))))
           (update-board-info! :valid-selection? false)
           (update-board-info! :curr-selected nil))))))
 
