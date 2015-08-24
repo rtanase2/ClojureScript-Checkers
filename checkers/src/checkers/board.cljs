@@ -265,19 +265,37 @@
                                    down-left)
                                  down-right]))]))
         empty-neighbors (find-empty-neighbors neighbors)
-        neighbors-with-skips (add-skips pos neighbors)]
+        valid-empty-neighbors (if (re-find #"prom"
+                                          piece-type)
+                               empty-neighbors
+                               (filter #((if
+                                           (= (@res/board-info :curr-color)
+                                              :red)
+                                           < >)
+                                         pos %) empty-neighbors))
+        neighbors-with-skips (add-skips pos neighbors)
+        valid-neighbors-with-skips (if (re-find #"prom"
+                                                piece-type)
+                                     neighbors-with-skips
+                                     (filter #((if
+                                                 (= (@res/board-info :curr-color)
+                                                    :red)
+                                                 < >)
+                                               pos %) neighbors-with-skips))]
     ; If the empty-neighbors and the neighbor-with-skips
     ; are not equal, then there must be a skip
-    (if (and (not (= empty-neighbors
-                     neighbors-with-skips))
+    (println (str "vnws: " valid-neighbors-with-skips))
+    (println (str "en:" valid-empty-neighbors))
+    (if (and (not (= valid-empty-neighbors
+                     valid-neighbors-with-skips))
              (re-find (re-pattern
                        (name
                         (@res/board-info :curr-color)))
                       piece-type))
       (do
-        (println empty-neighbors)
-        (println neighbors-with-skips)
-        (update-board-info! :skip-available? true)))
+        (println "in true")
+        (update-board-info! :skip-available? true))
+      (println "in false"))
     neighbors-with-skips))
 
 ; Computes neighbors for every piece in pieces-vec.
@@ -393,12 +411,17 @@
                   ; If the piece is in a place where it could
                   ; be promoted to king
                   (if (change-to-prom? clicked-pos)
-                    ; If the piece is in a pace where it can
+                    ; If the piece is in a place where it can
                     ; be promoted to king
-                    (add-board-command
-                     :update-board-position
-                     clicked-pos
-                     (prom-piece (update-piece-type (@board curr-selected))))
+                    (do
+                      (println "skipped prom")
+                      (println (@board curr-selected))
+                      (println (update-piece-type (@board curr-selected)))
+                      (add-board-command
+                       :update-board-position
+                       clicked-pos
+                       (prom-piece (update-piece-type (@board curr-selected)))))
+
                     ; Else move the piece and unselect it
                     (add-board-command
                      :update-board-position
@@ -587,6 +610,8 @@
             command-type (command :command)
             curr-selected (@res/board-info :curr-selected)]
         (println command-type)
+        (println (:position command))
+        (println (:piece command))
         (cond
          (= command-type :update-board-position)
          (swap! board assoc (:position command)
