@@ -15,8 +15,9 @@
 
 (defonce board-info
   (atom {:curr-color :black
-         :valid-selection false
+         :valid-selection? false
          :curr-selected nil
-         :skip-available false
+         :skip-available? false
+         :last-move-a-skip? false
          :valid-pieces [] ; Vector of maps with position, if you can skip,
          }))              ; and what its neighbors are
