@@ -70,6 +70,10 @@
 (def top-row 1)
 (def bottom-row 8)
 
+; Takes in the currently selected position and
+; the corner position and figures out which
+; corner is in question. Returns the keyword
+; associated with the selected corner
 (defn which-corner? [main-pos corner-pos]
   (let [curr-row (Math/ceil (/ main-pos 4))
         row-odd? (odd? curr-row)
@@ -87,6 +91,9 @@
      (= corner-pos down-left) :down-left
      (= corner-pos down-right) :down-right)))
 
+; Calculates the end point of a skip starting at
+; pos and jumping to the specified corner. Returns
+; the end point of the skip.
 (defn calc-skip-pos [pos corner]
   (cond
    (= corner :up-left) (- pos 9)
@@ -94,6 +101,9 @@
    (= corner :down-left) (+ pos 7)
    (= corner :down-right) (+ pos 9)))
 
+; Takes in the start and end positions of a skip to
+; be performed and finds the middle piece. Returns
+; position of the skipped piece.
 (defn find-skipped-piece [curr-selected clicked-pos]
   (let [offset (- clicked-pos curr-selected)
         direction (cond
@@ -120,6 +130,8 @@
 ; Gets piece-pos which is an int and pos-skips-corners
 ; which is a vector of keywords containing a combintaion
 ; of :up-right, :up-left, :down-right and :down-left.
+; Returns vector of possible skips and eliminates
+; impossible ones.
 (defn skips-possible? [piece-pos pos-skip-corners]
   (let [sec-top-row 2
         sec-bottom-row 7
@@ -151,6 +163,10 @@
                         (filter-val :down-right pos-skip-corners))
      :else pos-skip-corners)))
 
+; Takes in the current piece position and a vector of
+; its adjacent neighbors. It then analyzes the neighbors
+; and removes impossible moves and adds skip options.
+; Returns vector of all possible moves for current piece.
 (defn add-skips [piece-pos neighbors]
   (let [curr-color (name (@res/board-info :curr-color))
         other-color (if (= curr-color "black")
@@ -193,9 +209,14 @@
                    #(= (@board %) :empty-piece)
                    skips-vec)))))
 
-; given a board position, return the position of neighbors
+; Given a board position, return the position of neighbors
 ; [NOTE:] Challengee should investigate memoization of
 ;         this function.
+;
+; I am thinking about making a board atom that I can update
+; only the old spot, new spot and new spot's neighbors after
+; a move is successfully moved. Maybe be too hard but will
+; try that.
 (defn compute-pos-neighbors [pos]
   (let [curr-row (Math/ceil (/ pos 4))
         row-odd? (odd? curr-row)
