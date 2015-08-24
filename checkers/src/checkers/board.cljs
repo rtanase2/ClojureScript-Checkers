@@ -316,6 +316,8 @@
   (cond
    (= piece :red-piece) :prom-red-piece
    (= piece :black-piece) :prom-black-piece
+   (= piece :selected-red-piece) :selected-prom-red-piece
+   (= piece :selected-black-piece) :selected-prom-black-piece
    :else piece))
 
 ; Adds a board command to board-commands with :command command,
@@ -401,7 +403,13 @@
                     (add-board-command
                      :update-board-position
                      clicked-pos
-                     (update-piece-type (@board curr-selected))))))
+                     (@board curr-selected)))
+                  (update-board-info! :last-move-a-skip? true)
+                  (update-board-info! :curr-selected clicked-pos)
+                  (update-board-info! :skip-available? false)
+                  (add-board-command :check-for-jump
+                                     clicked-pos
+                                     nil)))
               ; Else if, there is a skip, but they chose a
               ; non-skipping move, then don't let them move
               ; and print and error message
@@ -575,6 +583,28 @@
 ; and executes on them.  at present, the only thing it does
 ; is sets the desired game position to the desired piece
 (go (while true
-      (let [command (<! board-commands)]
-        (swap! board assoc (:position command)
-               (:piece command)))))
+      (let [command (<! board-commands)
+            command-type (command :command)
+            curr-selected (@res/board-info :curr-selected)]
+        (println command-type)
+        (cond
+         (= command-type :update-board-position)
+         (swap! board assoc (:position command)
+                (:piece command))
+         (= command-type :check-for-jump)
+         (do
+           (compute-pos-neighbors (@res/board-info :curr-selected))
+           (if (not (@res/board-info :skip-available?))
+             ; Update things.
+             (do
+               (add-board-command :update-board-position
+                                  curr-selected
+                                  (update-piece-type
+                                   (@board curr-selected)))
+               (update-board-info! :curr-color
+                                   (if (= (@res/board-info :curr-color) :red)
+                                     :black
+                                     :red))
+               (update-board-info! :curr-selected nil)
+               (update-board-info! :valid-selection? false)
+               (update-board-info! :last-move-a-skip? false))))))))
