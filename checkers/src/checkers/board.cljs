@@ -369,50 +369,75 @@
     ; Check if the clicked piece is empty.
     (if (= clicked-piece-type :empty-piece)
       ; If it is empty, see if it is a neighbor
-      (if (get (set valid-neighbors) clicked-pos)
-        ; If it is a valid neighbor, then check
-        ; if the move is a skip and update properly
-        (do
-          (if (> (Math/abs (- clicked-pos curr-selected)) 5)
-            ; Then it is a skip
-            (let [skipped-piece (find-skipped-piece
-                                 curr-selected
-                                 clicked-pos)]
+      (do
+        (if (get (set valid-neighbors) clicked-pos)
+          ; If there is valid  neighbor AND the players chose
+          ; a skipping move
+          (if (@res/board-info :skip-available)
+            (if (> (Math/abs (- clicked-pos curr-selected)) 5)
+              ; Then update the board accordingly
+              (let [skipped-piece (find-skipped-piece
+                                   curr-selected
+                                   clicked-pos)]
+                (do
+                  (add-board-command
+                   :update-board-position
+                   skipped-piece
+                   :empty-piece)
+                  (add-board-command
+                   :update-board-position
+                   curr-selected
+                   :empty-piece)
+                  ; If the piece is in a place where it could
+                  ; be promoted to king
+                  (if (change-to-prom? clicked-pos)
+                    ; If the piece is in a pace where it can
+                    ; be promoted to king
+                    (add-board-command
+                     :update-board-position
+                     clicked-pos
+                     (prom-piece (update-piece-type (@board curr-selected))))
+                    ; Else move the piece and unselect it
+                    (add-board-command
+                     :update-board-position
+                     clicked-pos
+                     (update-piece-type (@board curr-selected))))))
+              ; Else if, there is a skip, but they chose a
+              ; non-skipping move, then don't let them move
+              ; and print and error message
+              (cout/update-system-out-text "A skip is available so, you must skip."))
+            ; If no skips are available, then update the board normally
+            (do
               (add-board-command
                :update-board-position
-               skipped-piece
-               :empty-piece)))
-
-          (add-board-command
-           :update-board-position
-           curr-selected
-           :empty-piece)
-          ; If the piece is in a place where it could
-          ; be promoted to king
-          (if (change-to-prom? clicked-pos)
-            ; If the piece is in a pace where it can
-            ; be promoted to king
-            (add-board-command
-             :update-board-position
-             clicked-pos
-             (prom-piece (update-piece-type (@board curr-selected))))
-            ; Else move the piece and unselect it
-            (add-board-command
-             :update-board-position
-             clicked-pos
-             (update-piece-type (@board curr-selected))))
-          (update-board-info! :valid-selection false)
-          (update-board-info! :curr-selected nil)
-          (update-board-info! :curr-color
-                              (if (= player-color :red)
-                                :black
-                                :red))
-          (update-board-info! :skip-available false))
-        ; Else, it is not a neighbor and print saying it
-        ; is not a valid move
-        (cout/update-system-out-text
-         (str "You cannot move the currently selected "
-              "piece there. Please try again.")))
+               curr-selected
+               :empty-piece)
+              ; If the piece is in a place where it could
+              ; be promoted to king
+              (if (change-to-prom? clicked-pos)
+                ; If the piece is in a pace where it can
+                ; be promoted to king
+                (add-board-command
+                 :update-board-position
+                 clicked-pos
+                 (prom-piece (update-piece-type (@board curr-selected))))
+                ; Else move the piece and unselect it
+                (add-board-command
+                 :update-board-position
+                 clicked-pos
+                 (update-piece-type (@board curr-selected))))
+              (update-board-info! :valid-selection false)
+              (update-board-info! :curr-selected nil)
+              (update-board-info! :curr-color
+                                  (if (= player-color :red)
+                                    :black
+                                    :red))
+              (update-board-info! :skip-available false)))
+          ; Else, it is not a neighbor and print saying it
+          ; is not a valid move
+          (cout/update-system-out-text
+           (str "You cannot move the currently selected "
+                "piece there. Please try again."))))
       ; Else, it is occupied, so it is not a valid move
       ; so print and error message.
       (cout/update-system-out-text
