@@ -8,9 +8,24 @@
 
 (defonce app-state
   (atom {:header "Welcome to Rachelle's ClojureScript Checkers!"
-         :instructions (str "You are the black player. To move, click "
-                            "the piece you'd like to move and then "
-                            "click the square you'd like to move it to.")
+         :rules (str "You are the black player, so you "
+                     "go first. You must make a capture "
+                     "if one is available. If multiple "
+                     "are available, you can choose which"
+                     " capture you make. You are awarded a"
+                     " king if you make it to the row "
+                     "farthest from you. Normal pieces can"
+                     " only move diagonally forward and "
+                     "kings can move diagonally forward and"
+                     " backward. A game is over when a "
+                     "player cannot make any moves more "
+                     "moves, either because they have no "
+                     "pieces left or their pieces are "
+                     "trapped.")
+         :instructions (str "To move a piece, click "
+                            "the piece you would like to move "
+                            "and click the space you would like"
+                            " to move to.")
          :system-out ""}))
 
 (defonce board-info

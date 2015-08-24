@@ -410,9 +410,6 @@
                     ; If the piece is in a place where it can
                     ; be promoted to king
                     (do
-                      (println "skipped prom")
-                      (println (@board curr-selected))
-                      (println (update-piece-type (@board curr-selected)))
                       (add-board-command
                        :update-board-position
                        clicked-pos
@@ -522,11 +519,10 @@
                    :piece (update-piece-type
                            clicked-piece-type)})
             (if (@res/board-info :valid-selection?)
-              (do
-                (add-board-command
-                 :update-board-position
-                 curr-selected
-                 (update-piece-type curr-selected-type))))
+              (add-board-command
+               :update-board-position
+               curr-selected
+               (update-piece-type curr-selected-type)))
             (update-board-info! :valid-selection? true)
             (update-board-info! :curr-selected clicked-pos))
           ; Else, print an error message stating that
@@ -537,11 +533,10 @@
                     "available moves. Please select a "
                     "different piece."))
             (if (@res/board-info :valid-selection?)
-              (do
-                (add-board-command
-                 :update-board-position
-                 curr-selected
-                 (update-piece-type curr-selected-type))))
+              (add-board-command
+               :update-board-position
+               curr-selected
+               (update-piece-type curr-selected-type)))
             (update-board-info! :valid-selection? false)
             (update-board-info! :curr-selected nil))))
       ; Else, check if there is a currently selected piece
@@ -561,7 +556,7 @@
               (add-board-command
                :update-board-position
                curr-selected
-               (update-piece-type curr-selected-type))))
+               (update-piece-type curr-selected-type)))
           (update-board-info! :valid-selection? false)
           (update-board-info! :curr-selected nil))))))
 
@@ -597,7 +592,6 @@
       (let [event (<! board-events)]
         (cout/clear-system-out)
         (set-skips-available)
-        (println (@res/board-info :skip-available?))
         (validate-clicked-piece event))))
 
 ; this concurrent process receives board command messages
@@ -607,9 +601,6 @@
       (let [command (<! board-commands)
             command-type (command :command)
             curr-selected (@res/board-info :curr-selected)]
-        (println command-type)
-        (println (:position command))
-        (println (:piece command))
         (cond
          (= command-type :update-board-position)
          (swap! board assoc (:position command)
