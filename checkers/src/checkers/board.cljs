@@ -2,7 +2,8 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :refer [put! chan <!]]
             [checkers.resources :as res]
-            [checkers.output :as cout]))
+            [checkers.output :as cout]
+            [clojure.string :refer [replace]]))
 
 (enable-console-print!)
 
@@ -246,32 +247,37 @@
     #{:black-piece, :selected-black-piece,
       :prom-black-piece, :selected-prom-black-piece}))
 
-(defn determine-piece [piece]
-  (cond
-   (= piece :red-piece) :selected-red-piece
-   (= piece :black-piece) :selected-black-piece
-   (= piece :prom-red-piece) :selected-prom-red-piece
-   (= piece :prom-black-piece) :selected-prom-black-piece
-   (= piece :selected-red-piece) :red-piece
-   (= piece :selected-black-piece) :black-piece
-   (= piece :selected-prom-red-piece) :prom-red-piece
-   (= piece :selected-prom-black-piece) :prom-black-piece))
+(defn select-piece [piece]
+  (let [str-piece (name piece)
+        selected? (re-find #"selected" str-piece)]
+    (if selected?
+      (keyword (replace str-piece #"selected-" ""))
+      (keyword (str "selected-" str-piece)))))
 
+; Promotes the current piece to king. Piece is the keyword
+; type of piece in question. If the piece type is already
+; kinged, then return piece.
 (defn prom-piece [piece]
   (cond
    (= piece :red-piece) :prom-red-piece
    (= piece :black-piece) :prom-black-piece
    :else piece))
 
-(defn update-board-commands [command, position, piece]
+; Adds a board command to board-commands with :command command,
+; :position position and :piece piece
+(defn add-board-command [command, position, piece]
   (put! board-commands
         {:command command
          :position position
          :piece piece}))
 
-(defn swap-in-board-info! [k v]
+; Updates the key k to contain the value v
+(defn update-board-info! [k v]
   (swap! res/board-info assoc k v))
 
+; Determines if the piece at pos should be kinged or not
+; Returns true if it should be kinged and false if not.
+; Pos is the square in question
 (defn change-to-prom? [pos]
   (let [curr-row (Math/ceil (/ pos 4))
         curr-color (@res/board-info :curr-color)]
@@ -284,6 +290,8 @@
       true
       false)))
 
+; Takes in the click event and updates the board based on
+; the clicked position and the board-info
 (defn move-piece [event]
   (let [clicked-pos (:position event)
         clicked-piece-type (@board clicked-pos)
@@ -320,12 +328,12 @@
             (let [skipped-piece (find-skipped-piece
                                  curr-selected
                                  clicked-pos)]
-              (update-board-commands
+              (add-board-command
                :update-board-position
                skipped-piece
                :empty-piece)))
 
-          (update-board-commands
+          (add-board-command
            :update-board-position
            curr-selected
            :empty-piece)
@@ -334,18 +342,18 @@
           (if (change-to-prom? clicked-pos)
             ; If the piece is in a pace where it can
             ; be promoted to king
-            (update-board-commands
+            (add-board-command
              :update-board-position
              clicked-pos
-             (prom-piece (determine-piece (@board curr-selected))))
+             (prom-piece (select-piece (@board curr-selected))))
             ; Else move the piece and unselect it
-            (update-board-commands
+            (add-board-command
              :update-board-position
              clicked-pos
-             (determine-piece (@board curr-selected))))
-          (swap-in-board-info! :valid-selection false)
-          (swap-in-board-info! :curr-selected nil)
-          (swap-in-board-info! :curr-color
+             (select-piece (@board curr-selected))))
+          (update-board-info! :valid-selection false)
+          (update-board-info! :curr-selected nil)
+          (update-board-info! :curr-color
                                (if (= player-color :red)
                                  :black
                                  :red)))
@@ -389,12 +397,12 @@
         ; show there is no valid selection and no piece
         ; currently selected
         (do
-          (update-board-commands
+          (add-board-command
            :update-board-position
            curr-selected
-           (determine-piece curr-selected-type))
-          (swap-in-board-info! :valid-selection false)
-          (swap-in-board-info! :curr-selected nil))
+           (select-piece curr-selected-type))
+          (update-board-info! :valid-selection false)
+          (update-board-info! :curr-selected nil))
         ; Else, check if the piece has possible moves
         (if (some #(= :empty-piece %)
                   (map #(@board %)
@@ -408,15 +416,15 @@
             (put! board-commands
                   {:command :update-board-position
                    :position clicked-pos
-                   :piece (determine-piece
+                   :piece (select-piece
                            clicked-piece-type)})
             (if (@res/board-info :valid-selection)
-              (update-board-commands
+              (add-board-command
                :update-board-position
                curr-selected
-               (determine-piece curr-selected-type)))
-            (swap-in-board-info! :valid-selection true)
-            (swap-in-board-info! :curr-selected clicked-pos))
+               (select-piece curr-selected-type)))
+            (update-board-info! :valid-selection true)
+            (update-board-info! :curr-selected clicked-pos))
           ; Else, print an error message stating that
           ; there are no valid moves for that piece and
           ; to try again
@@ -425,12 +433,12 @@
                     "available moves. Please select a "
                     "different piece."))
             (if (@res/board-info :valid-selection)
-              (update-board-commands
+              (add-board-command
                :update-board-position
                curr-selected
-               (determine-piece curr-selected-type)))
-            (swap-in-board-info! :valid-selection false)
-            (swap-in-board-info! :curr-selected nil))))
+               (select-piece curr-selected-type)))
+            (update-board-info! :valid-selection false)
+            (update-board-info! :curr-selected nil))))
       ; Else, check if there is a currently selected piece
       (if valid-selection?
         ; If there is, move the piece to the spot if valid
@@ -445,12 +453,12 @@
                 current-player-color
                 " piece."))
           (if (@res/board-info :valid-selection)
-            (update-board-commands
+            (add-board-command
              :update-board-position
              curr-selected
-             (determine-piece curr-selected-type)))
-          (swap-in-board-info! :valid-selection false)
-          (swap-in-board-info! :curr-selected nil))))))
+             (select-piece curr-selected-type)))
+          (update-board-info! :valid-selection false)
+          (update-board-info! :curr-selected nil))))))
 
 ; == Concurrent Processes =================================
 ; this concurrent process reacts to board click events --
