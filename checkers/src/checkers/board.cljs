@@ -210,8 +210,8 @@
         down-left (if row-odd? (+ pos 4)
                     (+ pos 3))
         down-right (if row-odd? (+ pos 5)
-                     (+ pos 4))]
-    (as-> (remove nil?
+                     (+ pos 4))
+        neighbors (remove nil?
                   (flatten
                    ; Determine which upper pieces to include
                    [(if (not top-row?)
@@ -230,13 +230,14 @@
                          down-left]
                         [(if (not left-edge?)
                            down-left)
-                         down-right]))])) neighbors
-          (add-skips pos neighbors))))
+                         down-right]))]))
+        neighbors-with-skips (add-skips pos neighbors)]
+    neighbors-with-skips))
 
 ; compute neighbors for every board position
-(defn compute-neighbor-positions []
+(defn compute-neighbor-positions [pieces-vec]
   (map (fn [pos] {pos (compute-pos-neighbors pos)})
-       (range 1 33)))
+       pieces-vec))
 
 (defn get-valid-piece-types []
   (if (= (@res/board-info :curr-color) :red)
@@ -456,7 +457,6 @@
 ; at present, it sets the board position clicked to contain
 ; a black piece by sending a command to the board-commands
 ; channel
-
 (go (while true
       (let [event (<! board-events)]
         (cout/clear-system-out)
