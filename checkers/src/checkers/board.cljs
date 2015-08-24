@@ -228,7 +228,8 @@
 ; a move is successfully moved. Maybe be too hard but will
 ; try that.
 (defn compute-pos-neighbors [pos]
-  (let [curr-row (Math/ceil (/ pos 4))
+  (let [piece-type (name (@board pos))
+        curr-row (Math/ceil (/ pos 4))
         row-odd? (odd? curr-row)
         row-even? (not row-odd?)
         top-row? (= curr-row top-row)
@@ -267,9 +268,16 @@
         neighbors-with-skips (add-skips pos neighbors)]
     ; If the empty-neighbors and the neighbor-with-skips
     ; are not equal, then there must be a skip
-    (if (not (= empty-neighbors
-                neighbors-with-skips))
-      (update-board-info! :skip-available true))
+    (if (and (not (= empty-neighbors
+                     neighbors-with-skips))
+             (re-find (re-pattern
+                       (name
+                        (@res/board-info :curr-color)))
+                      piece-type))
+      (do
+        (println empty-neighbors)
+        (println neighbors-with-skips)
+        (update-board-info! :skip-available true)))
     neighbors-with-skips))
 
 ; Computes neighbors for every piece in pieces-vec.
@@ -399,7 +407,6 @@
                               (if (= player-color :red)
                                 :black
                                 :red))
-          (update-board-info! :skip-available false)
           (update-board-info! :skip-available false))
         ; Else, it is not a neighbor and print saying it
         ; is not a valid move
@@ -525,7 +532,7 @@
                      all-squares)]
     (doall
      (compute-neighbor-positions (concat normal-pieces
-                                       prom-pieces)))))
+                                         prom-pieces)))))
 
 ; == Concurrent Processes =================================
 ; this concurrent process reacts to board click events --
