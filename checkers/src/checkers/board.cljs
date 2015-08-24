@@ -235,19 +235,29 @@
         neighbors-with-skips (add-skips pos neighbors)]
     neighbors-with-skips))
 
-; compute neighbors for every board position
+; Computes neighbors for every piece in pieces-vec.
+; pieces-vec is a vector of all positions you want
+; neighbors of.
 (defn compute-neighbor-positions [pieces-vec]
   (map (fn [pos] {pos (compute-pos-neighbors pos)})
        pieces-vec))
 
+; Returns a set of all the valid pieces that can be
+; selected at this time based off of the current
+; color in board-info
 (defn get-valid-piece-types []
-  (if (= (@res/board-info :curr-color) :red)
-    #{:red-piece, :selected-red-piece,
-      :prom-red-piece, :selected-prom-red-piece}
-    #{:black-piece, :selected-black-piece,
-      :prom-black-piece, :selected-prom-black-piece}))
+  (let [color (name (@res/board-info :curr-color))]
+    (set
+     (map keyword [(str color "-piece")
+                   (str "prom-" color "-piece")
+                   (str "selected-" color "-piece")
+                   (str "selected-prom-" color "piece")]))))
 
-(defn select-piece [piece]
+; Takes in a keyword piece and returns the keyword type
+; of the piece after a click has occurred.
+; :black-piece => :selected-black-piece
+; :selected-black-piece => :black-piece
+(defn update-piece-type [piece]
   (let [str-piece (name piece)
         selected? (re-find #"selected" str-piece)]
     (if selected?
@@ -345,12 +355,12 @@
             (add-board-command
              :update-board-position
              clicked-pos
-             (prom-piece (select-piece (@board curr-selected))))
+             (prom-piece (update-piece-type (@board curr-selected))))
             ; Else move the piece and unselect it
             (add-board-command
              :update-board-position
              clicked-pos
-             (select-piece (@board curr-selected))))
+             (update-piece-type (@board curr-selected))))
           (update-board-info! :valid-selection false)
           (update-board-info! :curr-selected nil)
           (update-board-info! :curr-color
@@ -400,7 +410,7 @@
           (add-board-command
            :update-board-position
            curr-selected
-           (select-piece curr-selected-type))
+           (update-piece-type curr-selected-type))
           (update-board-info! :valid-selection false)
           (update-board-info! :curr-selected nil))
         ; Else, check if the piece has possible moves
@@ -416,13 +426,13 @@
             (put! board-commands
                   {:command :update-board-position
                    :position clicked-pos
-                   :piece (select-piece
+                   :piece (update-piece-type
                            clicked-piece-type)})
             (if (@res/board-info :valid-selection)
               (add-board-command
                :update-board-position
                curr-selected
-               (select-piece curr-selected-type)))
+               (update-piece-type curr-selected-type)))
             (update-board-info! :valid-selection true)
             (update-board-info! :curr-selected clicked-pos))
           ; Else, print an error message stating that
@@ -436,7 +446,7 @@
               (add-board-command
                :update-board-position
                curr-selected
-               (select-piece curr-selected-type)))
+               (update-piece-type curr-selected-type)))
             (update-board-info! :valid-selection false)
             (update-board-info! :curr-selected nil))))
       ; Else, check if there is a currently selected piece
@@ -456,7 +466,7 @@
             (add-board-command
              :update-board-position
              curr-selected
-             (select-piece curr-selected-type)))
+             (update-piece-type curr-selected-type)))
           (update-board-info! :valid-selection false)
           (update-board-info! :curr-selected nil))))))
 
