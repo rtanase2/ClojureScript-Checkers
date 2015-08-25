@@ -264,13 +264,6 @@
            < >) pos %) pos-vect))))
 
 ; Given a board position, return the position of neighbors
-; [NOTE:] Challengee should investigate memoization of
-;         this function.
-;
-; I am thinking about making a board atom that I can update
-; only the old spot, new spot and new spot's neighbors after
-; a move is successfully moved. Maybe be too hard but will
-; try that.
 (defn compute-pos-neighbors [pos]
   (let [piece-type (name (@board pos))
         neighbors (find-all-neighbors pos)
