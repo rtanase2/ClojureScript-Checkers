@@ -21,7 +21,8 @@
                      "player cannot make any moves more "
                      "moves, either because they have no "
                      "pieces left or their pieces are "
-                     "trapped.")
+                     "trapped. The player who has less pieces "
+                     "loses.")
          :instructions (str "To move a piece, click "
                             "the piece you would like to move "
                             "and click the space you would like"
@@ -33,4 +34,5 @@
          :valid-selection? false
          :curr-selected nil
          :skip-available? false
-         :last-move-a-skip? false}))
+         :last-move-a-skip? false
+         :game-over? false}))
