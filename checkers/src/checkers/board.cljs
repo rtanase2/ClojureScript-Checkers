@@ -146,25 +146,21 @@
                          (= curr-row sec-bottom-row))
         right-edge? (= (mod piece-pos 4) 0)
         left-edge? (= (mod piece-pos 4) 1)
-        filter-val (fn [k vect]
-                     (filter #(= k %) vect))]
+        filter-on-psc (fn [k]
+                     (filter #(= k %) pos-skip-corners))]
     (cond
-     (and bottom-edge? left-edge?)
-     (filter-val :up-right pos-skip-corners)
-     (and bottom-edge? right-edge?)
-     (filter-val :up-left pos-skip-corners)
-     (and top-edge? left-edge?)
-     (filter-val :down-right pos-skip-corners)
-     (and top-edge? right-edge?)
-     (filter-val :down-left pos-skip-corners)
-     bottom-edge? (concat (filter-val :up-right pos-skip-corners)
-                          (filter-val :up-left pos-skip-corners))
-     top-edge?(concat (filter-val :down-right pos-skip-corners)
-                      (filter-val :down-left pos-skip-corners))
-     right-edge? (concat (filter-val :down-left pos-skip-corners)
-                         (filter-val :up-left pos-skip-corners))
-     left-edge? (concat (filter-val :up-right pos-skip-corners)
-                        (filter-val :down-right pos-skip-corners))
+     (and bottom-edge? left-edge?) (filter-on-psc :up-right)
+     (and bottom-edge? right-edge?) (filter-on-psc :up-left)
+     (and top-edge? left-edge?) (filter-on-psc :down-right)
+     (and top-edge? right-edge?) (filter-on-psc :down-left)
+     bottom-edge? (concat (filter-on-psc :up-right)
+                          (filter-on-psc :up-left))
+     top-edge?(concat (filter-on-psc :down-right)
+                      (filter-on-psc :down-left))
+     right-edge? (concat (filter-on-psc :down-left)
+                         (filter-on-psc :up-left))
+     left-edge? (concat (filter-on-psc :up-right)
+                        (filter-on-psc :down-right))
      :else pos-skip-corners)))
 
 ; Takes a vector of positions and returns the pieces
@@ -219,7 +215,7 @@
                    #(= (@board %) :empty-piece)
                    skips-vec)))))
 
-; Finds all pieces that are next to pos
+; Finds all pieces that are adjacent to pos
 (defn find-all-neighbors [pos]
   (let [curr-row (Math/ceil (/ pos 4))
         row-odd? (odd? curr-row)
@@ -228,33 +224,25 @@
         bottom-row? (= curr-row bottom-row)
         right-edge? (= (mod pos 4) 0)
         left-edge? (= (mod pos 4) 1)
-        up-left (if row-odd? (- pos 4)
-                  (- pos 5))
-        up-right (if row-odd? (- pos 3)
-                   (- pos 4))
-        down-left (if row-odd? (+ pos 4)
-                    (+ pos 3))
-        down-right (if row-odd? (+ pos 5)
-                     (+ pos 4))]
+        up-left (if row-odd? (- pos 4) (- pos 5))
+        up-right (if row-odd? (- pos 3) (- pos 4))
+        down-left (if row-odd? (+ pos 4) (+ pos 3))
+        down-right (if row-odd? (+ pos 5) (+ pos 4))]
     (remove nil?
             (flatten
              ; Determine which upper pieces to include
              [(if (not top-row?)
                 (if row-even?
-                  [(if (not left-edge?)
-                     up-left)
+                  [(if (not left-edge?) up-left)
                    up-right]
-                  [(if (not right-edge?)
-                     up-right)
+                  [(if (not right-edge?) up-right)
                    up-left]))
               ; Determine which lower pieces to include
               (if (not bottom-row?)
                 (if row-odd?
-                  [(if (not right-edge?)
-                     down-right)
+                  [(if (not right-edge?) down-right)
                    down-left]
-                  [(if (not left-edge?)
-                     down-left)
+                  [(if (not left-edge?) down-left)
                    down-right]))]))))
 
 ; Finds all pieces that are valid neighbors
@@ -264,10 +252,10 @@
 (defn get-valid-neighbors [pos pos-vect]
   (let [piece-type (name (@board pos))]
     (if (re-find #"prom" piece-type)
-    pos-vect
-    (filter
-     #((if (= (@res/board-info :curr-color) :red)
-         < >) pos %) pos-vect))))
+      pos-vect
+      (filter
+       #((if (= (@res/board-info :curr-color) :red)
+           < >) pos %) pos-vect))))
 
 ; Given a board position, return the position of neighbors
 ; [NOTE:] Challengee should investigate memoization of
@@ -368,9 +356,9 @@
   (let [clicked-pos (:position event)
         clicked-piece-type (@board clicked-pos)
         curr-selected (@res/board-info :curr-selected)
+        curr-type (@board curr-selected)
         pos-neighbors (set (compute-pos-neighbors
                             curr-selected))
-        curr-selected-type (name (@board curr-selected))
         player-color (@res/board-info :curr-color)
         valid-neighbors (get-valid-neighbors
                          curr-selected pos-neighbors)]
@@ -388,30 +376,22 @@
                                    curr-selected
                                    clicked-pos)]
                 (do
-                  (add-board-command
-                   :update-board-position
-                   skipped-piece
-                   :empty-piece)
-                  (add-board-command
-                   :update-board-position
-                   curr-selected
-                   :empty-piece)
+                  (add-board-command :update-board-position
+                   skipped-piece :empty-piece)
+                  (add-board-command :update-board-position
+                   curr-selected :empty-piece)
                   ; If the piece is in a place where it could
                   ; be promoted to king
                   (if (change-to-prom? clicked-pos)
                     ; If the piece is in a place where it can
                     ; be promoted to king
                     (do
-                      (add-board-command
-                       :update-board-position
-                       clicked-pos
-                       (prom-piece (@board curr-selected))))
-
+                      (add-board-command :update-board-position
+                       clicked-pos (prom-piece
+                                    curr-type)))
                     ; Else move the piece and unselect it
-                    (add-board-command
-                     :update-board-position
-                     clicked-pos
-                     (@board curr-selected)))
+                    (add-board-command :update-board-position
+                     clicked-pos curr-type))
                   (update-board-info! :last-move-a-skip? true)
                   (update-board-info! :curr-selected clicked-pos)
                   (update-board-info! :skip-available? false)
@@ -436,12 +416,12 @@
                 (add-board-command
                  :update-board-position
                  clicked-pos
-                 (prom-piece (update-piece-type (@board curr-selected))))
+                 (prom-piece (update-piece-type curr-type)))
                 ; Else move the piece and unselect it
                 (add-board-command
                  :update-board-position
                  clicked-pos
-                 (update-piece-type (@board curr-selected))))
+                 (update-piece-type curr-type)))
               (update-board-info! :valid-selection? false)
               (update-board-info! :curr-selected nil)
               (update-board-info! :curr-color
