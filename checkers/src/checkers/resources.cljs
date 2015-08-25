@@ -27,7 +27,6 @@
                             "the piece you would like to move "
                             "and click the space you would like"
                             " to move to.")
-         :wins "Black: 0             Red: 0"
          :system-out ""}))
 
 (defonce board-info

@@ -32,13 +32,7 @@
     (fn [data owner]
       (om/component (dom/p #js {:className "plain-text"} (:rules data))))
     app-state
-    {:target (. js/document (getElementById "rules"))})
-
-  (om/root
-    (fn [data owner]
-      (om/component (dom/h3 #js {:className "plain-text"} (:wins data))))
-    app-state
-    {:target (. js/document (getElementById "wins"))}))
+    {:target (. js/document (getElementById "rules"))}))
 
 ; Calls the correct functions to properly update the
 ; system-output text
