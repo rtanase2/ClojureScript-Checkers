@@ -257,6 +257,18 @@
                      down-left)
                    down-right]))]))))
 
+; Finds all pieces that are valid neighbors
+; from pos-vect based off of piece type
+; aka prom or not and returns vector
+; of vaild neighbors
+(defn get-valid-neighbors [pos pos-vect]
+  (let [piece-type (name (@board pos))]
+    (if (re-find #"prom" piece-type)
+    pos-vect
+    (filter
+     #((if (= (@res/board-info :curr-color) :red)
+         < >) pos %) pos-vect))))
+
 ; Given a board position, return the position of neighbors
 ; [NOTE:] Challengee should investigate memoization of
 ;         this function.
@@ -269,23 +281,12 @@
   (let [piece-type (name (@board pos))
         neighbors (find-all-neighbors pos)
         empty-neighbors (find-empty-neighbors neighbors)
-        valid-empty-neighbors (if (re-find #"prom"
-                                           piece-type)
-                                empty-neighbors
-                                (filter #((if
-                                            (= (@res/board-info :curr-color)
-                                               :red)
-                                            < >)
-                                          pos %) empty-neighbors))
+        valid-empty-neighbors (get-valid-neighbors
+                               pos empty-neighbors)
         neighbors-with-skips (add-skips pos neighbors)
-        valid-neighbors-with-skips (if (re-find #"prom"
-                                                piece-type)
-                                     neighbors-with-skips
-                                     (filter #((if
-                                                 (= (@res/board-info :curr-color)
-                                                    :red)
-                                                 < >)
-                                               pos %) neighbors-with-skips))]
+        valid-neighbors-with-skips (get-valid-neighbors
+                                    pos
+                                    neighbors-with-skips)]
     ; If the empty-neighbors and the neighbor-with-skips
     ; are not equal, then there must be a skip
     (if (and (not (= valid-empty-neighbors
@@ -371,21 +372,8 @@
                             curr-selected))
         curr-selected-type (name (@board curr-selected))
         player-color (@res/board-info :curr-color)
-        ; If it has prom in the name, it can move both ways
-        ; If it doesn't have prom in the name it can only move
-        ; forward.
-        ;
-        ; Forward for red is if the neighbor space is
-        ; greater than the currently selected piece
-        ; Forward for black is if the neighbor space is
-        ; less than the currently selected piece)
-        valid-neighbors (if (re-find #"prom"
-                                     curr-selected-type)
-                          pos-neighbors
-                          (filter #((if (= player-color :red)
-                                      < >)
-                                    curr-selected %)
-                                  pos-neighbors))]
+        valid-neighbors (get-valid-neighbors
+                         curr-selected pos-neighbors)]
     ; Check if the clicked piece is empty.
     (if (= clicked-piece-type :empty-piece)
       ; If it is empty, see if it is a neighbor
@@ -483,15 +471,8 @@
                                     :curr-color))
         valid-selection? (@res/board-info :valid-selection?)
         pos-neighbors (compute-pos-neighbors clicked-pos)
-        valid-neighbors (if (re-find #"prom"
-                                     (name clicked-piece-type))
-                          pos-neighbors
-                          (filter #((if
-                                      (= current-player-color
-                                         "red")
-                                      < >)
-                                    clicked-pos %)
-                                  pos-neighbors))]
+        valid-neighbors (get-valid-neighbors
+                         clicked-pos pos-neighbors)]
     ; If the piece clicked is from the correct player
     (if (@res/board-info :last-move-a-skip?)
       ; If last move was a skip, don't let player change
