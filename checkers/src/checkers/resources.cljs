@@ -8,8 +8,8 @@
 
 (defonce app-state
   (atom {:header "Welcome to Rachelle's ClojureScript Checkers!"
-         :rules (str "You are the black player, so you "
-                     "go first. You must make a capture "
+         :rules (str "The black player goes first, followed "
+                     "by the red player. You must make a capture "
                      "if one is available. If multiple "
                      "are available, you can choose which"
                      " capture you make. You are awarded a"
