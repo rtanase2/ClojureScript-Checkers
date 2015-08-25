@@ -646,8 +646,8 @@
        ; player with the most kings win. If number of
        ; kings is the same, then it is a tie
        :else
-       (let [total-red-prom-pieces (count-prom-red-pieces)
-             total-black-prom-pieces (count-prom-black-pieces)]
+       (let [total-red-prom-pieces (count prom-red-pieces)
+             total-black-prom-pieces (count prom-black-pieces)]
          (cond
           (< total-red-prom-pieces total-black-prom-pieces)
           (print-win-message "Black wins!")
@@ -666,9 +666,13 @@
       (let [event (<! board-events)]
         (if (not (@res/board-info :game-over?))
           (do
+            (println "clear output")
             (cout/clear-system-out)
+            (println "set skips")
             (set-skips-available)
+            (println "validate click")
             (validate-clicked-piece event)
+            (println "detect win")
             (detect-win))))))
 
 ; this concurrent process receives board command messages
