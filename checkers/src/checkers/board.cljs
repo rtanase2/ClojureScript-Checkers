@@ -291,9 +291,6 @@
                         (@res/board-info :curr-color)))
                       piece-type))
       (do
-        (println pos)
-        (println valid-empty-neighbors)
-        (println valid-neighbors-with-skips)
         (update-board-info! :skip-available? true)))
     valid-neighbors-with-skips))
 
@@ -622,10 +619,6 @@
         num-black-moves (reduce + (map #(count (first (vals %))) all-black))
         num-red-moves (reduce + (map #(count (first (vals %))) all-red))
         curr-color (@res/board-info :curr-color)]
-    (println num-red-moves)
-    (println all-red)
-    (println num-black-moves)
-    (println all-black)
     (if (empty? all-red)
       (print-win-message "Black wins!"))
     (if (empty? all-black)
@@ -666,13 +659,9 @@
       (let [event (<! board-events)]
         (if (not (@res/board-info :game-over?))
           (do
-            (println "clear output")
             (cout/clear-system-out)
-            (println "set skips")
             (set-skips-available)
-            (println "validate click")
             (validate-clicked-piece event)
-            (println "detect win")
             (detect-win))))))
 
 ; this concurrent process receives board command messages
