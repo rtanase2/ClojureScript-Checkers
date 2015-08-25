@@ -70,6 +70,13 @@
 (def top-row 1)
 (def bottom-row 8)
 
+; Returns keyword of other color
+; Red -> Black, Black -> Red
+(defn get-opposite-color []
+  (if (= (@res/board-info :curr-color) :red)
+    :black
+    :red))
+
 ; Updates the key k to contain the value v
 (defn update-board-info! [k v]
   (swap! res/board-info assoc k v))
@@ -147,7 +154,7 @@
         right-edge? (= (mod piece-pos 4) 0)
         left-edge? (= (mod piece-pos 4) 1)
         filter-on-psc (fn [k]
-                     (filter #(= k %) pos-skip-corners))]
+                        (filter #(= k %) pos-skip-corners))]
     (cond
      (and bottom-edge? left-edge?) (filter-on-psc :up-right)
      (and bottom-edge? right-edge?) (filter-on-psc :up-left)
@@ -167,8 +174,7 @@
 ; that are of the opposite color
 (defn find-opposing-neighbors [neighbors]
   (let [curr-color (name (@res/board-info :curr-color))
-        other-color (if (= curr-color "black")
-                      "red" "black")]
+        other-color (name (get-opposite-color))]
     (filter (fn [pos]
               (or (= (keyword (str "prom-"
                                    other-color
@@ -359,7 +365,6 @@
         curr-type (@board curr-selected)
         pos-neighbors (set (compute-pos-neighbors
                             curr-selected))
-        player-color (@res/board-info :curr-color)
         valid-neighbors (get-valid-neighbors
                          curr-selected pos-neighbors)]
     ; Check if the clicked piece is empty.
@@ -377,9 +382,9 @@
                                    clicked-pos)]
                 (do
                   (add-board-command :update-board-position
-                   skipped-piece :empty-piece)
+                                     skipped-piece :empty-piece)
                   (add-board-command :update-board-position
-                   curr-selected :empty-piece)
+                                     curr-selected :empty-piece)
                   ; If the piece is in a place where it could
                   ; be promoted to king
                   (if (change-to-prom? clicked-pos)
@@ -387,11 +392,11 @@
                     ; be promoted to king
                     (do
                       (add-board-command :update-board-position
-                       clicked-pos (prom-piece
-                                    curr-type)))
+                                         clicked-pos (prom-piece
+                                                      curr-type)))
                     ; Else move the piece and unselect it
                     (add-board-command :update-board-position
-                     clicked-pos curr-type))
+                                       clicked-pos curr-type))
                   (update-board-info! :last-move-a-skip? true)
                   (update-board-info! :curr-selected clicked-pos)
                   (update-board-info! :skip-available? false)
@@ -425,9 +430,7 @@
               (update-board-info! :valid-selection? false)
               (update-board-info! :curr-selected nil)
               (update-board-info! :curr-color
-                                  (if (= player-color :red)
-                                    :black
-                                    :red))
+                                  (get-opposite-color))
               (update-board-info! :skip-available? false)))
           ; Else, it is not a neighbor and print saying it
           ; is not a valid move
@@ -652,9 +655,7 @@
                                   (update-piece-type
                                    (@board curr-selected)))
                (update-board-info! :curr-color
-                                   (if (= (@res/board-info :curr-color) :red)
-                                     :black
-                                     :red))
+                                   (get-opposite-color))
                (update-board-info! :curr-selected nil)
                (update-board-info! :valid-selection? false)
                (update-board-info! :last-move-a-skip? false))))
