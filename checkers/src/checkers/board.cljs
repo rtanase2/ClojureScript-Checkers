@@ -219,17 +219,9 @@
                    #(= (@board %) :empty-piece)
                    skips-vec)))))
 
-; Given a board position, return the position of neighbors
-; [NOTE:] Challengee should investigate memoization of
-;         this function.
-;
-; I am thinking about making a board atom that I can update
-; only the old spot, new spot and new spot's neighbors after
-; a move is successfully moved. Maybe be too hard but will
-; try that.
-(defn compute-pos-neighbors [pos]
-  (let [piece-type (name (@board pos))
-        curr-row (Math/ceil (/ pos 4))
+; Finds all pieces that are next to pos
+(defn find-all-neighbors [pos]
+  (let [curr-row (Math/ceil (/ pos 4))
         row-odd? (odd? curr-row)
         row-even? (not row-odd?)
         top-row? (= curr-row top-row)
@@ -243,27 +235,39 @@
         down-left (if row-odd? (+ pos 4)
                     (+ pos 3))
         down-right (if row-odd? (+ pos 5)
-                     (+ pos 4))
-        neighbors (remove nil?
-                          (flatten
-                           ; Determine which upper pieces to include
-                           [(if (not top-row?)
-                              (if row-even?
-                                [(if (not left-edge?)
-                                   up-left)
-                                 up-right]
-                                [(if (not right-edge?)
-                                   up-right)
-                                 up-left]))
-                            ; Determine which lower pieces to include
-                            (if (not bottom-row?)
-                              (if row-odd?
-                                [(if (not right-edge?)
-                                   down-right)
-                                 down-left]
-                                [(if (not left-edge?)
-                                   down-left)
-                                 down-right]))]))
+                     (+ pos 4))]
+    (remove nil?
+            (flatten
+             ; Determine which upper pieces to include
+             [(if (not top-row?)
+                (if row-even?
+                  [(if (not left-edge?)
+                     up-left)
+                   up-right]
+                  [(if (not right-edge?)
+                     up-right)
+                   up-left]))
+              ; Determine which lower pieces to include
+              (if (not bottom-row?)
+                (if row-odd?
+                  [(if (not right-edge?)
+                     down-right)
+                   down-left]
+                  [(if (not left-edge?)
+                     down-left)
+                   down-right]))]))))
+
+; Given a board position, return the position of neighbors
+; [NOTE:] Challengee should investigate memoization of
+;         this function.
+;
+; I am thinking about making a board atom that I can update
+; only the old spot, new spot and new spot's neighbors after
+; a move is successfully moved. Maybe be too hard but will
+; try that.
+(defn compute-pos-neighbors [pos]
+  (let [piece-type (name (@board pos))
+        neighbors (find-all-neighbors pos)
         empty-neighbors (find-empty-neighbors neighbors)
         valid-empty-neighbors (if (re-find #"prom"
                                            piece-type)
@@ -517,11 +521,11 @@
             ; valid selection is chosen and which space
             ; it is
             (do
-              (put! board-commands
-                    {:command :update-board-position
-                     :position clicked-pos
-                     :piece (update-piece-type
-                             clicked-piece-type)})
+              (add-board-command
+               :update-board-position
+               clicked-pos
+               (update-piece-type
+                clicked-piece-type))
               (if (@res/board-info :valid-selection?)
                 (add-board-command
                  :update-board-position
@@ -614,10 +618,10 @@
                                    :prom-black-piece)
                                   (get-neighbors-of-type
                                    :selected-prom-black-piece))
-        all-red (concat red-pieces prom-red-pieces)
-        all-black (concat black-pieces prom-black-pieces)
-        num-black-moves (reduce + (map #(count (first (vals %))) all-black))
-        num-red-moves (reduce + (map #(count (first (vals %))) all-red))
+        all-red (do (concat red-pieces prom-red-pieces))
+        all-black (do (concat black-pieces prom-black-pieces))
+        num-black-moves (do (reduce + (map #(count (first (vals %))) all-black)))
+        num-red-moves (do (reduce + (map #(count (first (vals %))) all-red)))
         curr-color (@res/board-info :curr-color)]
     (if (empty? all-red)
       (print-win-message "Black wins!"))
