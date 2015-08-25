@@ -662,7 +662,8 @@
             (cout/clear-system-out)
             (set-skips-available)
             (validate-clicked-piece event)
-            (detect-win))))))
+            (add-board-command
+             :check-win nil nil))))))
 
 ; this concurrent process receives board command messages
 ; and executes on them.  at present, the only thing it does
@@ -691,4 +692,6 @@
                                      :red))
                (update-board-info! :curr-selected nil)
                (update-board-info! :valid-selection? false)
-               (update-board-info! :last-move-a-skip? false))))))))
+               (update-board-info! :last-move-a-skip? false))))
+         (= command-type :check-win)
+         (detect-win)))))
